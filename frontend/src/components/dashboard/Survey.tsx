@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { API_BASE } from '../../lib/env';
+import { Droplets, Shield, CircleDot, Sparkles } from 'lucide-react';
 
 type Axis = 'OD' | 'SR' | 'PN' | 'WT';
 
@@ -16,21 +17,21 @@ const SURVEY_V1: Item[] = [
     id: 'Q1',
     axis: 'OD',
     text: '세안 후 30분 이내에 얼굴이 당기거나 건조하게 느껴진다.',
-    reverse: true,
+    reverse: false, // 그렇다=건성(D)
     rightLetter: 'O',
   },
   {
     id: 'Q2',
     axis: 'OD',
     text: '오후가 되면 T존(이마·코)이 번들거린다.',
-    reverse: false,
+    reverse: true, // 그렇다=지성(O) → reverse
     rightLetter: 'O',
   },
   {
     id: 'Q3',
     axis: 'OD',
     text: '파운데이션이 자주 뜨고 각질이 부각된다.',
-    reverse: true,
+    reverse: false, // 그렇다=건성(D)
     rightLetter: 'O',
   },
 
@@ -38,21 +39,21 @@ const SURVEY_V1: Item[] = [
     id: 'Q4',
     axis: 'SR',
     text: '새 제품 사용 시 화끈거림·따가움·가려움이 자주 생긴다.',
-    reverse: false,
+    reverse: true, // 그렇다=민감성(S)
     rightLetter: 'S',
   },
   {
     id: 'Q5',
     axis: 'SR',
     text: '계절/온도 변화에 따라 홍조가 쉽게 나타난다.',
-    reverse: false,
+    reverse: true, // 그렇다=민감성(S)
     rightLetter: 'S',
   },
   {
     id: 'Q6',
     axis: 'SR',
     text: '알레르기/아토피·여드름 등 피부 트러블 병력이 있다.',
-    reverse: false,
+    reverse: true, // 그렇다=민감성(S)
     rightLetter: 'S',
   },
 
@@ -60,21 +61,21 @@ const SURVEY_V1: Item[] = [
     id: 'Q7',
     axis: 'PN',
     text: '기미·잡티가 쉽게 생기거나 오래 남는다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'P',
   },
   {
     id: 'Q8',
     axis: 'PN',
     text: '외출 시 자외선 차단을 자주 빼먹는 편이다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'P',
   },
   {
     id: 'Q9',
     axis: 'PN',
     text: '여드름·상처 후 갈색/붉은 자국(PIH/PIE)이 오래 남는다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'P',
   },
 
@@ -82,21 +83,21 @@ const SURVEY_V1: Item[] = [
     id: 'Q10',
     axis: 'WT',
     text: '눈가/팔자 등 표정 주름이 점점 또렷해진다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'W',
   },
   {
     id: 'Q11',
     axis: 'WT',
     text: '밤샘/스트레스 후 피부 탄력이 확 떨어진다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'W',
   },
   {
     id: 'Q12',
     axis: 'WT',
     text: '건조한 곳에서 미세주름(건성주름)이 잘 생긴다.',
-    reverse: false,
+    reverse: true,
     rightLetter: 'W',
   },
 ];
@@ -171,6 +172,72 @@ const TIEBREAKERS: Record<Axis, Item[]> = {
 const AXES: Axis[] = ['OD', 'SR', 'PN', 'WT'];
 const LEFT_LETTER: Record<Axis, 'D' | 'R' | 'N' | 'T'> = { OD: 'D', SR: 'R', PN: 'N', WT: 'T' };
 const RIGHT_LETTER: Record<Axis, 'O' | 'S' | 'P' | 'W'> = { OD: 'O', SR: 'S', PN: 'P', WT: 'W' };
+
+// 타입별 한줄 요약문
+const TYPE_SUMMARIES: Record<string, string> = {
+  DSPT: '예민하고 건조해서 기미·잡티가 쌓인 피부',
+  DSNT: '건조한데 예민해서 쉽게 붉어지고 트러블이 나는 피부',
+  DSPW: '건조하고 예민해서 염증이 반복되고, 그게 색소와 주름으로 남는 피부',
+  DSNW: '건조하고 예민하지만 색소는 거의 없고, 주름이 빨리 오는 피부',
+  OSPT: '유분이 많으며 예민해서 염증이 잦고, 그 뒤에 색소가 남는 피부',
+  OSNT: '유분이 많으며 예민해서 트러블은 잘 나지만, 색소·주름은 적은 피부',
+  OSPW: '유분이 많으며 예민하고, 색소와 주름이 같이 오는 피부',
+  OSNW: '유분이 많은 예민 피부인데, 색소는 적고 주름이 잘 생기는 피부',
+  ORPT: '유분이 많고 튼튼하지만, 잡티가 잘 생기는 피부',
+  ORNT: '유분이 많고 튼튼하며 기미·주름도 적은 균형형 피부',
+  ORPW: '튼튼한 지성이지만 잡티와 주름이 같이 오는 피부',
+  ORNW: '튼튼한 지성이지만 기미는 적고 주름이 잘 생기는 피부',
+  DRNT: '건조하지만 튼튼해서 트러블·색소·주름이 적은 피부',
+  DRPT: '건조하고 튼튼하지만 기미·잡티가 잘 생기는 피부',
+  DRNW: '건조하고 튼튼하지만 주름이 잘 생기는 피부',
+  DRPW: '건조하고 튼튼하지만 기미와 주름이 같이 쌓이는 피부',
+};
+
+// 축별 설정 (아이콘, 색상, 라벨)
+const AXIS_CONFIG: Record<
+  Axis,
+  {
+    icon: typeof Droplets;
+    color: string;
+    bgColor: string;
+    label: string;
+    leftLabel: string;
+    rightLabel: string;
+  }
+> = {
+  OD: {
+    icon: Droplets,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500',
+    label: '수분',
+    leftLabel: '건성', // D = 건성
+    rightLabel: '지성', // O = 지성
+  },
+  SR: {
+    icon: Shield,
+    color: 'text-emerald-500',
+    bgColor: 'bg-emerald-500',
+    label: '민감도',
+    leftLabel: '저항성',
+    rightLabel: '민감성',
+  },
+  PN: {
+    icon: CircleDot,
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500',
+    label: '색소침착',
+    leftLabel: '비색소',
+    rightLabel: '색소침착',
+  },
+  WT: {
+    icon: Sparkles,
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500',
+    label: '탄력성',
+    leftLabel: '탱탱함',
+    rightLabel: '주름',
+  },
+};
 
 function applyReverse(x: number, reverse: boolean) {
   return reverse ? 6 - x : x;
@@ -271,36 +338,61 @@ export default function Survey({ onDone }: { onDone: () => void }) {
   const [final, setFinal] = useState<null | ReturnType<typeof evaluate>>(null);
   const [saving, setSaving] = useState(false);
 
+  // 동그라미 크기 (양쪽이 크고 가운데가 작음)
+  const circleSizes = [40, 36, 28, 36, 40];
+
+  // 색상 그라데이션 (초록 → 회색 → 보라)
+  const getCircleColor = (index: number, isSelected: boolean) => {
+    if (!isSelected) {
+      // 선택 안됨: 테두리만
+      const borderColors = [
+        'border-pink-500',
+        'border-pink-400',
+        'border-gray-300',
+        'border-purple-400',
+        'border-purple-500',
+      ];
+      return borderColors[index];
+    }
+    // 선택됨: 채워진 색상
+    const bgColors = [
+      'bg-pink-500 border-pink-500',
+      'bg-pink-400 border-pink-400',
+      'bg-gray-400 border-gray-400',
+      'bg-purple-400 border-purple-400',
+      'bg-purple-500 border-purple-500',
+    ];
+    return bgColors[index];
+  };
+
   const Radio = (v: number | null, onChange: (x: number | null) => void) => (
-    <div className="flex gap-2 flex-wrap">
-      {[1, 2, 3, 4, 5].map(n => (
-        <label
-          key={n}
-          className={`px-3 py-1.5 rounded-lg border cursor-pointer select-none ${
-            v === n
-              ? 'bg-purple-600 text-white border-purple-600'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <input type="radio" className="hidden" checked={v === n} onChange={() => onChange(n)} />
-          {n}
-        </label>
-      ))}
-      <label
-        className={`px-3 py-1.5 rounded-lg border cursor-pointer select-none ${
-          v == null
-            ? 'bg-gray-900 text-white border-gray-900'
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
-      >
-        <input
-          type="radio"
-          className="hidden"
-          checked={v == null}
-          onChange={() => onChange(null)}
-        />
-        모름
-      </label>
+    <div className="flex items-center justify-center gap-3 sm:gap-4">
+      {/* 그렇다 라벨 */}
+      <span className="text-sm font-medium text-pink-600 whitespace-nowrap">그렇다</span>
+
+      {/* 동그라미들 */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {[1, 2, 3, 4, 5].map((n, index) => {
+          const isSelected = v === n;
+          const size = circleSizes[index];
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(n)}
+              className={`rounded-full border-2 transition-all duration-200 hover:scale-110 ${getCircleColor(
+                index,
+                isSelected
+              )} ${isSelected ? 'shadow-md' : 'hover:shadow-sm'}`}
+              style={{ width: size, height: size }}
+              aria-label={`${n}점`}
+            />
+          );
+        })}
+      </div>
+
+      {/* 아니다 라벨 */}
+      <span className="text-sm font-medium text-purple-600 whitespace-nowrap">아니다</span>
     </div>
   );
 
@@ -397,13 +489,6 @@ export default function Survey({ onDone }: { onDone: () => void }) {
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-violet-100 p-5 mb-6">
-          <p className="text-gray-700">
-            각 문항에 대해 <b>1=전혀 아니다</b> ~ <b>5=매우 그렇다</b> 중 선택하세요. 애매하면{' '}
-            <b>모름</b>을 선택해도 됩니다.
-          </p>
-        </div>
-
         {/* 문항들 */}
         {AXES.map(axis => {
           const titleMap: Record<Axis, string> = {
@@ -441,11 +526,6 @@ export default function Survey({ onDone }: { onDone: () => void }) {
           >
             결과 보기
           </button>
-          {final?.typeCode && (
-            <span className="text-gray-700">
-              예비 타입: <b>{final.typeCode}</b> (확신도 {final.confOverall})
-            </span>
-          )}
         </div>
 
         {/* 타이브레이커 */}
@@ -467,7 +547,7 @@ export default function Survey({ onDone }: { onDone: () => void }) {
             <div className="mt-4 flex justify-center">
               <button
                 onClick={scoreFinal}
-                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold hover:opacity-95"
+                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-pink-500 text-white font-semibold hover:opacity-85"
               >
                 최종 결과 보기
               </button>
@@ -475,46 +555,83 @@ export default function Survey({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-        {/* 최종 결과 */}
+        {/* 최종 결과 - 그래프 형식 */}
         {final?.typeCode && neededTB.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-violet-200 p-5 mb-6">
-            <h3 className="font-semibold text-violet-700 mb-3">최종 결과</h3>
-            <p className="text-gray-800">
-              <b>바우만 타입: {final.typeCode}</b> &nbsp;|&nbsp; 확신도 {final.confOverall}/100
+          <div className="bg-white rounded-2xl shadow-lg border border-violet-100 p-6 mb-6">
+            {/* 타입 코드 뱃지 */}
+            <div className="flex justify-center mb-4">
+              <span className="inline-block px-6 py-2 rounded-full border-2 border-pink-400 text-pink-600 font-bold text-xl">
+                {final.typeCode}
+              </span>
+            </div>
+
+            {/* 한줄 요약문 */}
+            <p className="text-center text-gray-700 mb-8 text-lg">
+              {TYPE_SUMMARIES[final.typeCode] || '나만의 피부 타입'}
             </p>
-            <ul className="mt-3 space-y-1 text-gray-700">
+
+            {/* 그래프 영역 */}
+            <div className="space-y-6">
               {AXES.map(ax => {
                 const a = final.axes[ax];
-                const left = LEFT_LETTER[ax],
-                  right = RIGHT_LETTER[ax];
+                const config = AXIS_CONFIG[ax];
+                const Icon = config.icon;
+                const isLeft = a.letter === LEFT_LETTER[ax];
+
+                // 결과 방향에 따라 강도 계산
+                // LEFT(D,R,N,T): avg가 낮을수록 강함 → (5 - avg) / 4 * 100
+                // RIGHT(O,S,P,W): avg가 높을수록 강함 → (avg - 1) / 4 * 100
+                const percent = isLeft ? ((5 - a.avg) / 4) * 100 : ((a.avg - 1) / 4) * 100;
+
+                // 최소 15% 보장 (너무 작으면 안 보임)
+                const displayPercent = Math.max(15, percent);
+
                 return (
-                  <li key={ax}>
-                    - <b>{ax}</b>: 평균 {a.avg} / 판정 <b>{a.letter}</b> (신뢰도 {a.conf}) · {left}{' '}
-                    ← {((a.avg - 1) / 4).toFixed(2)} → {right}
-                    {a.usedTb ? ' · 타이브레이커 반영' : ''}
-                  </li>
+                  <div key={ax} className="space-y-2">
+                    {/* 라벨 + 결과 텍스트 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-5 h-5 ${config.color}`} />
+                        <span className="font-medium text-gray-800">{config.label}</span>
+                      </div>
+                      <span className={`font-semibold ${config.color}`}>
+                        {isLeft ? config.leftLabel : config.rightLabel}
+                      </span>
+                    </div>
+
+                    {/* 바 그래프 */}
+                    <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute left-0 top-0 h-full rounded-full transition-all duration-500 ${config.bgColor}`}
+                        style={{ width: `${displayPercent}%` }}
+                      />
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
+
+            {/* 확신도 표시 */}
+            <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+              <span className="text-sm text-gray-500">
+                분석 확신도: <b className="text-purple-600">{final.confOverall}%</b>
+              </span>
+            </div>
           </div>
         )}
 
-        {/* 하단 버튼 */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          <button
-            onClick={resetAll}
-            className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-800 font-semibold hover:bg-gray-50"
-          >
-            다시하기
-          </button>
-          <button
-            onClick={handleSaveAndGo}
-            disabled={saving || !final?.typeCode}
-            className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-pink-600 text-white font-semibold hover:opacity-95 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {saving ? '저장 중...' : '저장하고 대시보드로'}
-          </button>
-        </div>
+        {/* 하단 버튼 - 결과가 있을 때만 표시 */}
+        {final?.typeCode && (
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <button
+              onClick={handleSaveAndGo}
+              disabled={saving || !final?.typeCode}
+              className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-pink-500 text-white font-semibold hover:opacity-85 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {saving ? '저장 중...' : '저장하고 대시보드로'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

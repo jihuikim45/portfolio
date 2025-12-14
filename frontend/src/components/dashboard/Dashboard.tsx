@@ -9,11 +9,11 @@ import DashboardBottomNav from './DashboardBottomNav';
 import SkinSummary from './SkinSummary';
 import TrendsSection from './TrendsSection';
 
-// 우측 카드(분포 + 모달 트리거)
-import SkinTypeStatsPanel from './SkinTypeStatsPanel';
+// 우측 카드(피부타입 가이드)
+import SkinTypeGuide from './SkinTypeGuide';
 
 // 아이콘
-import { TestTube2, Sparkles, ArrowRight, RefreshCcw, Heart } from 'lucide-react';
+import { TestTube2, Sparkles, ArrowRight, RefreshCcw } from 'lucide-react';
 
 export interface DashboardProps {
   userName?: string;
@@ -24,9 +24,6 @@ type AxisKey = 'OD' | 'SR' | 'PN' | 'WT';
 type AxisBrief = { avg: number; letter: string; confidence: number };
 type AxesJSON = Record<AxisKey, AxisBrief>;
 
-type Gender = 'all' | 'female' | 'male' | 'other' | 'na';
-type AgeBand = 'all' | '10s' | '20s' | '30s' | '40s' | '50s' | '60s_plus';
-
 export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardProps) {
   // --- 대시보드 상태 ---
   const [selectedPeriod, setSelectedPeriod] = useState('7days');
@@ -34,10 +31,6 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
   const [baumannType, setBaumannType] = useState<string>(''); // ← 빈 문자열로 초기화
   const [axes, setAxes] = useState<AxesJSON | null>(null);
   const [userId, setUserId] = useState<number | undefined>(undefined);
-
-  // --- 공용 필터(기간 항상 all) ---
-  const [gender, setGender] = useState<Gender>('all');
-  const [ageBand, setAgeBand] = useState<AgeBand>('all');
 
   // --- 축/라벨 계산 ---
   const code = (baumannType || 'ORNT').toUpperCase();
@@ -216,39 +209,6 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
     </div>
   );
 
-  // ▼ 공용 필터 바(기간 제거: 성별/연령대만)
-  const FiltersBar = () => (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-10">
-      <label className="text-xs text-gray-500">성별</label>
-      <select
-        value={gender}
-        onChange={e => setGender(e.target.value as Gender)}
-        className="border rounded-md px-2 py-1 text-sm mt2"
-      >
-        <option value="all">전체</option>
-        <option value="female">여성</option>
-        <option value="male">남성</option>
-        <option value="other">기타</option>
-        <option value="na">미응답</option>
-      </select>
-
-      <label className="text-xs text-gray-500 ml-2">연령대</label>
-      <select
-        value={ageBand}
-        onChange={e => setAgeBand(e.target.value as AgeBand)}
-        className="border rounded-md px-2 py-1 text-sm mt-1"
-      >
-        <option value="all">전체</option>
-        <option value="10s">10대</option>
-        <option value="20s">20대</option>
-        <option value="30s">30대</option>
-        <option value="40s">40대</option>
-        <option value="50s">50대</option>
-        <option value="60s_plus">60대+</option>
-      </select>
-    </div>
-  );
-
   return (
     <div
       className="min-h-screen w-full pb-16 md:pb-0"
@@ -275,26 +235,9 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
               )}
             </div>
 
-            {/* 우측: 분포 패널 */}
-            <div className="p-4 sm:p-6">
-              <div className="mt-2 mb-3">
-                <div className="flex items-center gap-2 mt-2 mb-5">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-500">
-                    <Heart size={18} />
-                  </span>
-                  <h2 className="text-base sm:text-xl font-semibold">
-                    나와 같은 MBTI는 얼마나 될까?
-                  </h2>
-                </div>
-              </div>
-              <SkinTypeStatsPanel
-                interval="all"
-                gender={gender}
-                ageBand={ageBand}
-                framed={false}
-                userTypeCode={code}
-                filterBar={<FiltersBar />}
-              />
+            {/* 우측: 피부타입 가이드 */}
+            <div className="p-4 sm:p-6 max-h-[700px] overflow-y-auto">
+              <SkinTypeGuide typeCode={baumannType} />
             </div>
           </div>
         </section>
