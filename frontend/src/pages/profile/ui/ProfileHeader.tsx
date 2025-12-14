@@ -23,14 +23,15 @@ export const ProfileHeader = ({ userName, onNavigate }: ProfileHeaderProps) => {
     <header className="bg-white/80 backdrop-blur-lg border-b border-pink-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h1
-              className="text-5xl sm:text-6xl font-light tracking-wide"
-              style={{ fontFamily: "'Italianno', cursive", color: '#9b87f5' }}
-            >
-              aller
-            </h1>
-          </div>
+          {/* Logo - 클릭 시 대시보드로 이동 */}
+          <button
+            onClick={() => onNavigate?.('dashboard')}
+            className="text-5xl sm:text-6xl font-light tracking-wide hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none"
+            style={{ fontFamily: "'Italianno', cursive", color: '#9b87f5' }}
+            aria-label="대시보드로 이동"
+          >
+            aller
+          </button>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
@@ -79,8 +80,9 @@ export const ProfileHeader = ({ userName, onNavigate }: ProfileHeaderProps) => {
             </button>
             <button
               onClick={() => onNavigate?.('profile')}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold hover:scale-110 hover:shadow-lg transition-all cursor-pointer"
               style={{ background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)' }}
+              aria-label="프로필 페이지로 이동"
             >
               {userName.charAt(0).toUpperCase()}
             </button>

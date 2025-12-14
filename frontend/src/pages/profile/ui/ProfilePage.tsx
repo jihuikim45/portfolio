@@ -458,6 +458,7 @@ export const ProfilePage = ({ onNavigate, onLogout }: ProfilePageProps) => {
               onCancel={() => {
                 setIsEditing(false);
               }}
+              onLogout={onLogout}
             />
           </div>
 

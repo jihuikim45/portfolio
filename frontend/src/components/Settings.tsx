@@ -31,7 +31,12 @@ export interface SettingsProps {
   currentPage?: string;
 }
 
-export default function Settings({ onNavigate, onLogout, onChangePassword, currentPage = 'settings' }: SettingsProps) {
+export default function Settings({
+  onNavigate,
+  onLogout,
+  onChangePassword,
+  currentPage = 'settings',
+}: SettingsProps) {
   const name = useUserStore(state => state.name);
 
   // 알림 설정
@@ -46,8 +51,11 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
 
   // ✅ 계정 삭제 모달 상태 + 사용자 정보
   const [openDelete, setOpenDelete] = useState(false);
-  const userName = name || (typeof window !== 'undefined' ? (localStorage.getItem('user_name') || '사용자') : '사용자');
-  const userId = typeof window !== 'undefined' ? (Number(localStorage.getItem('user_id') || '') || null) : null;
+  const userName =
+    name ||
+    (typeof window !== 'undefined' ? localStorage.getItem('user_name') || '사용자' : '사용자');
+  const userId =
+    typeof window !== 'undefined' ? Number(localStorage.getItem('user_id') || '') || null : null;
 
   const handleLogout = () => {
     if (window.confirm('정말 로그아웃 하시겠습니까?')) {
@@ -67,7 +75,11 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-4xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center mb-6 sm:mb-8">
             <SettingsIcon className="w-8 h-8 text-pink-600 mr-3" />
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">설정</h2>
@@ -108,8 +120,12 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
                   <div className="flex items-center space-x-3">
                     <Mail className="w-5 h-5 text-gray-500" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">이메일 알림</p>
-                      <p className="text-xs sm:text-sm text-gray-500">중요한 업데이트를 이메일로 받기</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                        이메일 알림
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        중요한 업데이트를 이메일로 받기
+                      </p>
                     </div>
                   </div>
                   <button
@@ -129,7 +145,9 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
                   <div className="flex items-center space-x-3">
                     <Info className="w-5 h-5 text-gray-500" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">제품 업데이트</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                        제품 업데이트
+                      </p>
                       <p className="text-xs sm:text-sm text-gray-500">새로운 제품 추천 알림</p>
                     </div>
                   </div>
@@ -150,7 +168,9 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
                   <div className="flex items-center space-x-3">
                     <Bell className="w-5 h-5 text-gray-500" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">주간 리포트</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                        주간 리포트
+                      </p>
                       <p className="text-xs sm:text-sm text-gray-500">매주 피부 상태 요약 받기</p>
                     </div>
                   </div>
@@ -179,7 +199,11 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
                 {/* 다크 모드 */}
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
-                    {darkMode ? <Moon className="w-5 h-5 text-gray-500" /> : <Sun className="w-5 h-5 text-gray-500" />}
+                    {darkMode ? (
+                      <Moon className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <Sun className="w-5 h-5 text-gray-500" />
+                    )}
                     <div>
                       <p className="text-sm sm:text-base font-semibold text-gray-800">다크 모드</p>
                       <p className="text-xs sm:text-sm text-gray-500">어두운 테마 사용</p>
@@ -212,8 +236,8 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
                     className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
                   >
                     <option value="ko">한국어</option>
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
+                    {/* <option value="en">English</option> */}
+                    {/* <option value="ja">日本語</option> */}
                   </select>
                 </div>
               </div>
@@ -290,13 +314,13 @@ export default function Settings({ onNavigate, onLogout, onChangePassword, curre
             </div>
 
             {/* 앱 정보 */}
-            <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+            {/* <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
               <div className="text-center space-y-2">
                 <p className="text-sm text-gray-500">앱 버전</p>
                 <p className="text-lg font-bold text-gray-800">aller v1.0.0</p>
                 <p className="text-xs text-gray-400">© 2024 aller. All rights reserved.</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </motion.div>
       </main>

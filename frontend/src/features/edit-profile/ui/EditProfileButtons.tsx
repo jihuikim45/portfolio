@@ -1,4 +1,4 @@
-import { Edit2, Save, X } from 'lucide-react';
+import { Edit2, Save, X, LogOut } from 'lucide-react';
 import { Button } from '@/shared/ui';
 
 export interface EditProfileButtonsProps {
@@ -7,6 +7,7 @@ export interface EditProfileButtonsProps {
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
+  onLogout?: () => void;
 }
 
 export const EditProfileButtons = ({
@@ -15,12 +16,29 @@ export const EditProfileButtons = ({
   onEdit,
   onSave,
   onCancel,
+  onLogout,
 }: EditProfileButtonsProps) => {
+  const handleLogout = () => {
+    if (window.confirm('정말 로그아웃 하시겠습니까?')) {
+      onLogout?.();
+    }
+  };
+
   if (!isEditing) {
     return (
-      <Button onClick={onEdit} variant="primary" leftIcon={<Edit2 className="w-4 h-4" />}>
-        프로필 수정
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button onClick={onEdit} variant="primary" leftIcon={<Edit2 className="w-4 h-4" />}>
+          프로필 수정
+        </Button>
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          leftIcon={<LogOut className="w-4 h-4" />}
+          className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+        >
+          로그아웃
+        </Button>
+      </div>
     );
   }
 
