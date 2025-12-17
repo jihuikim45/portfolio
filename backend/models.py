@@ -135,18 +135,22 @@ class ProductViewLog(Base):
 
 
 class RecommendationFeedback(Base):
-    """추천 피드백 로그"""
+    """추천 피드백 로그 (배치 방식)"""
     __tablename__ = "recommendation_feedback"
 
     feedback_id = Column(BigInteger, primary_key=True, autoincrement=True)
     session_id = Column(String(36), ForeignKey("user_sessions.session_id"), nullable=False)
     user_id = Column(BigInteger, nullable=True)
-    recommendation_type = Column(Enum('skin_type', 'similar', 'popular', 'personal'), nullable=False)
-    algorithm_version = Column(String(20))
-    product_pid = Column(BigInteger, nullable=False)
-    position_shown = Column(Integer)
-    was_clicked = Column(Integer, default=0)  # Boolean
-    was_favorited = Column(Integer, default=0)  # Boolean
-    was_purchased = Column(Integer, default=0)  # Boolean
-    feedback_score = Column(Integer)  # 1-5
+    recommendation_id = Column(String(50), nullable=False)  # 추천 요청 ID
+    algorithm_type = Column(String(50), nullable=False)     # routine, baumann_match, similar 등
+    algorithm_version = Column(String(20), default='v1')
+    context_type = Column(Enum('home', 'product_detail', 'search_result', 'profile', 'routine'), nullable=False)
+    user_skin_type = Column(String(4), nullable=True)       # DRPT 등
+    shown_products = Column(Text, nullable=False)           # JSON: [pid1, pid2, ...]
+    shown_count = Column(Integer, nullable=False, default=0)
+    clicked_products = Column(Text, nullable=True)          # JSON: [pid1, pid2, ...]
+    clicked_count = Column(Integer, nullable=False, default=0)
+    favorited_products = Column(Text, nullable=True)        # JSON: [pid1, pid2, ...]
+    favorited_count = Column(Integer, nullable=False, default=0)
+    impression_time_ms = Column(Integer, nullable=True)
     created_at = Column(DateTime, nullable=False)

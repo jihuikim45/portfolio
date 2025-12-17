@@ -5,6 +5,7 @@ import { Clock, Heart } from 'lucide-react';
 import * as React from 'react';
 import { fetchRoutine } from '../../lib/utils';
 import { API_BASE } from '../../lib/env';
+import { getOrCreateSessionId, logRecommendationFeedback, updateRecommendationFeedback } from '../../lib/api';
 import ProductDetailModal from './ProductDetailModal';
 
 // Product 인터페이스
@@ -59,7 +60,34 @@ export default function CustomRoutine({
   const [favorites, setFavorites] = React.useState<number[]>([]);
   const [toastMsg, setToastMsg] = React.useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [currentRecommendationId, setCurrentRecommendationId] = React.useState<string | null>(null);
+  const [impressionStartTime, setImpressionStartTime] = React.useState<number | null>(null);
   const userId = localStorage.getItem('user_id');
+
+  // ✅ 페이지 이탈 시 노출 시간 기록
+  React.useEffect(() => {
+    const sendImpressionTime = () => {
+      if (currentRecommendationId && impressionStartTime) {
+        const impressionTimeMs = Date.now() - impressionStartTime;
+        // fetch + keepalive로 페이지 이탈 시에도 전송 보장
+        fetch(`${API_BASE}/api/events/recommendation-feedback`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recommendation_id: currentRecommendationId,
+            impression_time_ms: impressionTimeMs,
+          }),
+          keepalive: true,  // 페이지 이탈 시에도 요청 유지
+        }).catch(() => {});  // 에러 무시
+        console.log('[EVENT] 노출 시간 전송:', impressionTimeMs, 'ms');
+      }
+    };
+
+    window.addEventListener('beforeunload', sendImpressionTime);
+    return () => {
+      window.removeEventListener('beforeunload', sendImpressionTime);
+    };
+  }, [currentRecommendationId, impressionStartTime]);
 
   // ✅ 즐겨찾기 불러오기
   React.useEffect(() => {
@@ -111,6 +139,14 @@ export default function CustomRoutine({
         if (res.ok) {
           setFavorites(prev => [...prev, productId]);
           showToast('즐겨찾기에 추가되었습니다 💗');
+          
+          // ✅ 추천 피드백 업데이트 (즐겨찾기)
+          if (currentRecommendationId) {
+            updateRecommendationFeedback({
+              recommendationId: currentRecommendationId,
+              favoritedProduct: productId,
+            });
+          }
         }
       }
     } catch (err) {
@@ -232,7 +268,16 @@ export default function CustomRoutine({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
                 className="flex-shrink-0 w-40 sm:w-48 p-3 sm:p-4 rounded-xl bg-gradient-to-br from-pink-50 to-purple-50 border-2 border-pink-100 hover:shadow-lg transition-shadow relative cursor-pointer"
-                onClick={() => setSelectedProduct(product)}
+                onClick={() => {
+                  setSelectedProduct(product);
+                  // ✅ 추천 피드백 업데이트 (클릭)
+                  if (currentRecommendationId) {
+                    updateRecommendationFeedback({
+                      recommendationId: currentRecommendationId,
+                      clickedProduct: Number(product.product_pid),
+                    });
+                  }
+                }}
               >
                 <button
                   onClick={(e) => {
@@ -298,6 +343,35 @@ export default function CustomRoutine({
               );
 
               setRoutineProducts(data);
+
+              // ✅ 이전 추천의 노출 시간 기록 (새 추천 전에)
+              if (currentRecommendationId && impressionStartTime) {
+                const prevImpressionTime = Date.now() - impressionStartTime;
+                updateRecommendationFeedback({
+                  recommendationId: currentRecommendationId,
+                  impressionTimeMs: prevImpressionTime,
+                });
+                console.log('[EVENT] 이전 추천 노출 시간:', prevImpressionTime, 'ms');
+              }
+
+              // ✅ 추천 결과 노출 로깅 (배치 방식)
+              const sessionId = getOrCreateSessionId();
+              const recommendationId = crypto.randomUUID();  // 추천 요청 ID
+              setCurrentRecommendationId(recommendationId);  // ✅ 상태 저장
+              setImpressionStartTime(Date.now());            // ✅ 노출 시작 시간 기록
+              const shownPids = data.map((p: Product) => Number(p.product_pid));
+              
+              logRecommendationFeedback({
+                sessionId,
+                userId: userId ? Number(userId) : undefined,
+                recommendationId,
+                algorithmType: 'routine',
+                algorithmVersion: `${baumannType}_${season}_${timeOfDay}`,
+                contextType: 'routine',
+                userSkinType: baumannType,
+                shownProducts: shownPids,
+              });
+              console.log('[EVENT] 추천 노출 로깅 완료:', shownPids.length, '개 제품');
 
               // ✅ 최근 추천 기록 저장 (flat & 최신 우선)
               try {

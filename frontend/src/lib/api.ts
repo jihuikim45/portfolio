@@ -364,6 +364,36 @@ export async function logSearch(params: {
   }
 }
 
+/** 추천 피드백 업데이트 (클릭/즐겨찾기/노출시간) */
+export async function updateRecommendationFeedback(params: {
+  recommendationId: string;
+  clickedProduct?: number;
+  favoritedProduct?: number;
+  impressionTimeMs?: number;
+}) {
+  try {
+    console.log('[EVENT] updateRecommendationFeedback 호출:', params);
+    const res = await fetch(`${API_BASE}/api/events/recommendation-feedback`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recommendation_id: params.recommendationId,
+        clicked_product: params.clickedProduct,
+        favorited_product: params.favoritedProduct,
+        impression_time_ms: params.impressionTimeMs,
+      }),
+    });
+    if (!res.ok) {
+      console.warn('추천 피드백 업데이트 실패:', res.status);
+      return null;
+    }
+    return res.json();
+  } catch (e) {
+    console.warn('추천 피드백 업데이트 실패:', e);
+    return null;
+  }
+}
+
 /** 검색 결과 클릭 추적 */
 export async function logSearchClick(params: {
   queryId: number;
@@ -415,31 +445,43 @@ export async function logProductView(params: {
   }
 }
 
-/** 추천 피드백 로깅 */
+/** 추천 피드백 로깅 (배치 방식) */
 export async function logRecommendationFeedback(params: {
   sessionId: string;
   userId?: number;
-  productPid: number;
-  algorithm: string;
-  position: number;
-  wasClicked?: boolean;
-  wasPurchased?: boolean;
+  recommendationId: string;  // UUID
+  algorithmType: 'routine' | 'baumann_match' | 'similar' | 'popular' | 'personal';
+  algorithmVersion?: string;
+  contextType: 'home' | 'product_detail' | 'search_result' | 'profile' | 'routine';
+  userSkinType?: string;
+  shownProducts: number[];   // 노출된 제품 PID 목록
+  clickedProducts?: number[];
+  favoritedProducts?: number[];
+  impressionTimeMs?: number;
 }) {
   try {
+    console.log('[EVENT] logRecommendationFeedback 호출:', params);
     const res = await fetch(`${API_BASE}/api/events/recommendation-feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: params.sessionId,
         user_id: params.userId,
-        product_pid: params.productPid,
-        algorithm: params.algorithm,
-        position: params.position,
-        was_clicked: params.wasClicked,
-        was_purchased: params.wasPurchased,
+        recommendation_id: params.recommendationId,
+        algorithm_type: params.algorithmType,
+        algorithm_version: params.algorithmVersion || 'v1',
+        context_type: params.contextType,
+        user_skin_type: params.userSkinType,
+        shown_products: params.shownProducts,
+        clicked_products: params.clickedProducts,
+        favorited_products: params.favoritedProducts,
+        impression_time_ms: params.impressionTimeMs,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn('추천 피드백 로깅 실패:', res.status);
+      return null;
+    }
     return res.json();
   } catch (e) {
     console.warn('추천 피드백 로깅 실패:', e);

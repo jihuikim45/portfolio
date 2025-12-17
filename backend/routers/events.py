@@ -98,16 +98,18 @@ class ProductViewUpdateRequest(BaseModel):
 
 
 class RecommendationFeedbackRequest(BaseModel):
-    """추천 피드백 요청"""
+    """추천 피드백 요청 (배치 방식)"""
     session_id: str
     user_id: Optional[int] = None
-    recommendation_type: str = Field(..., description="skin_type, similar, popular, personal")
-    algorithm_version: Optional[str] = None
-    product_pid: int
-    position_shown: Optional[int] = None
-    was_clicked: bool = False
-    was_favorited: bool = False
-    feedback_score: Optional[int] = None  # 1-5
+    recommendation_id: str = Field(..., description="추천 요청 ID (UUID)")
+    algorithm_type: str = Field(..., description="routine, baumann_match, similar, popular, personal")
+    algorithm_version: str = Field(default="v1")
+    context_type: str = Field(..., description="home, product_detail, search_result, profile, routine")
+    user_skin_type: Optional[str] = None  # DRPT 등
+    shown_products: List[int] = Field(..., description="노출된 제품 PID 목록")
+    clicked_products: Optional[List[int]] = None
+    favorited_products: Optional[List[int]] = None
+    impression_time_ms: Optional[int] = None
 
 
 # ───────────────────────────────────────────────
@@ -301,47 +303,71 @@ def update_product_view(request: ProductViewUpdateRequest, db: Session = Depends
 @router.post("/recommendation-feedback")
 def log_recommendation_feedback(request: RecommendationFeedbackRequest, db: Session = Depends(get_db)):
     """
-    추천 상품에 대한 피드백 기록
+    추천 상품에 대한 피드백 기록 (배치 방식)
     """
+    import json
+    
     feedback = RecommendationFeedback(
         session_id=request.session_id,
         user_id=request.user_id,
-        recommendation_type=request.recommendation_type,
+        recommendation_id=request.recommendation_id,
+        algorithm_type=request.algorithm_type,
         algorithm_version=request.algorithm_version,
-        product_pid=request.product_pid,
-        position_shown=request.position_shown,
-        was_clicked=1 if request.was_clicked else 0,
-        was_favorited=1 if request.was_favorited else 0,
-        feedback_score=request.feedback_score,
+        context_type=request.context_type,
+        user_skin_type=request.user_skin_type,
+        shown_products=json.dumps(request.shown_products),
+        shown_count=len(request.shown_products),
+        clicked_products=json.dumps(request.clicked_products) if request.clicked_products else None,
+        clicked_count=len(request.clicked_products) if request.clicked_products else 0,
+        favorited_products=json.dumps(request.favorited_products) if request.favorited_products else None,
+        favorited_count=len(request.favorited_products) if request.favorited_products else 0,
+        impression_time_ms=request.impression_time_ms,
         created_at=datetime.utcnow()
     )
     db.add(feedback)
     db.commit()
     
-    return {"message": "추천 피드백 기록 완료", "feedback_id": feedback.feedback_id}
+    return {"message": "추천 피드백 기록 완료", "feedback_id": feedback.feedback_id, "recommendation_id": request.recommendation_id}
 
 
-@router.patch("/recommendation-feedback/{feedback_id}")
-def update_recommendation_feedback(
-    feedback_id: int,
-    was_clicked: Optional[bool] = None,
-    was_favorited: Optional[bool] = None,
-    feedback_score: Optional[int] = None,
-    db: Session = Depends(get_db)
-):
+class RecommendationFeedbackUpdateRequest(BaseModel):
+    """추천 피드백 업데이트 요청"""
+    recommendation_id: str
+    clicked_product: Optional[int] = None    # 클릭한 제품 PID
+    favorited_product: Optional[int] = None  # 즐겨찾기한 제품 PID
+    impression_time_ms: Optional[int] = None # 노출 시간 (ms)
+
+
+@router.patch("/recommendation-feedback")
+def update_recommendation_feedback(request: RecommendationFeedbackUpdateRequest, db: Session = Depends(get_db)):
     """
-    추천 피드백 업데이트 (나중에 클릭/즐겨찾기 했을 때)
+    추천 피드백 업데이트 (클릭/즐겨찾기 추가)
     """
-    feedback = db.query(RecommendationFeedback).filter_by(feedback_id=feedback_id).first()
-    if not feedback:
-        raise HTTPException(status_code=404, detail="피드백 기록을 찾을 수 없습니다")
+    import json
     
-    if was_clicked is not None:
-        feedback.was_clicked = 1 if was_clicked else 0
-    if was_favorited is not None:
-        feedback.was_favorited = 1 if was_favorited else 0
-    if feedback_score is not None:
-        feedback.feedback_score = feedback_score
+    feedback = db.query(RecommendationFeedback).filter_by(recommendation_id=request.recommendation_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="추천 기록을 찾을 수 없습니다")
+    
+    # 클릭 추가
+    if request.clicked_product:
+        current_clicked = json.loads(feedback.clicked_products) if feedback.clicked_products else []
+        if request.clicked_product not in current_clicked:
+            current_clicked.append(request.clicked_product)
+            feedback.clicked_products = json.dumps(current_clicked)
+            feedback.clicked_count = len(current_clicked)
+    
+    # 즐겨찾기 추가
+    if request.favorited_product:
+        current_favorited = json.loads(feedback.favorited_products) if feedback.favorited_products else []
+        if request.favorited_product not in current_favorited:
+            current_favorited.append(request.favorited_product)
+            feedback.favorited_products = json.dumps(current_favorited)
+            feedback.favorited_count = len(current_favorited)
+    
+    # 노출 시간 업데이트
+    if request.impression_time_ms:
+        feedback.impression_time_ms = request.impression_time_ms
     
     db.commit()
     
