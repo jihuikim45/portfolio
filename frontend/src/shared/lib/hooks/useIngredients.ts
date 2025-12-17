@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ingredientApi, Ingredient } from '@/entities/ingredient';
 import { debounce } from '@/shared/lib/utils';
+import { getOrCreateSessionId, logSearch } from '@/lib/api';
 
 export const useIngredients = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -50,6 +51,23 @@ export const useIngredients = () => {
         setNextPage(result.nextPage);
         setHasMore(result.hasMore);
         setTotal(result.total);
+
+        // 검색 이벤트 로깅 (첫 페이지만)
+        if (page === 1 && result.items.length > 0) {
+          const sessionId = getOrCreateSessionId();
+          console.log('[EVENT] logSearch 호출:', { sessionId, query, resultCount: result.total });
+          logSearch({
+            sessionId,
+            queryText: query,
+            queryType: 'ingredient',
+            searchMethod: 'text',
+            resultCount: result.total,
+          }).then(res => {
+            console.log('[EVENT] logSearch 응답:', res);
+          }).catch(err => {
+            console.error('[EVENT] logSearch 에러:', err);
+          });
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to search ingredients');
         if (page === 1) {

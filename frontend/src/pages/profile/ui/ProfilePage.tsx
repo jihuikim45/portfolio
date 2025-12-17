@@ -22,7 +22,7 @@ import { ProfileBottomNav } from './ProfileBottomNav';
 import ProductDetailModal from '@/components/dashboard/ProductDetailModal';
 
 // 성분 상세 조회 (Chatbot에서 쓰던 것 재사용)
-import { fetchIngredientDetail, IngredientInfo } from '@/lib/api';
+import { fetchIngredientDetail, IngredientInfo, addUserIngredient, logEvent, getOrCreateSessionId } from '@/lib/api';
 import { API_BASE } from '@/lib/env';
 
 export interface ProfilePageProps {
@@ -309,6 +309,23 @@ export const ProfilePage = ({ onNavigate, onLogout }: ProfilePageProps) => {
         }
         throw new Error('Failed to add ingredient');
       }
+
+      // ✅ 성분 추가 이벤트 로깅
+      const sessionId = getOrCreateSessionId();
+      console.log('[EVENT] logEvent 호출 (handleAddIngredient):', {
+        sessionId,
+        userId,
+        eventType: type === 'preferred' ? 'preference_add' : 'caution_add',
+        targetId: ingredient.korean_name,
+      });
+      logEvent({
+        sessionId,
+        userId,
+        eventType: type === 'preferred' ? 'preference_add' : 'caution_add',
+        eventTarget: 'ingredient',
+        targetId: ingredient.korean_name,
+        eventValue: { korean_name: ingredient.korean_name, ing_type: type },
+      });
 
       // Store 업데이트
       const newIngredient = {

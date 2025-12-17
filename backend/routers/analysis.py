@@ -38,14 +38,14 @@ class BaumannWeights(Base):
     target_max = Column(Integer)
     __table_args__ = (Index('idx_skin_type_keyword', 'skin_type', 'keyword'),)
 
-class Ingredients6Keyword(Base):
-    __tablename__ = "ingredients_6keyword"
+# ingredients_6keywords 테이블 (keyword가 쉼표 구분 다중값)
+class Ingredients6Keywords(Base):
+    __tablename__ = "ingredients_6keywords"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    keyword = Column(String(50), index=True)
-    name = Column(Text)
-    name_normalized = Column(Text, index=True)
-    kr_name = Column(Text)
+    korean_name = Column(Text)
+    english_name = Column(Text)
     description = Column(Text)
+    keyword = Column(Text)  # 쉼표 구분: "보습,진정,항산화"
 
 class ProductData(Base):
     __tablename__ = "product_data"
@@ -54,7 +54,7 @@ class ProductData(Base):
     category = Column(Text)
     p_ingredients = Column(Text)
 
-# [신규] Ingredients 테이블
+# [신규] Ingredients 테이블 (keyword 컨럼 추가)
 class Ingredients(Base):
     __tablename__ = "ingredients"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -62,6 +62,7 @@ class Ingredients(Base):
     english_name = Column(Text)
     description = Column(Text)
     caution_grade = Column(String(50))
+    keyword = Column(String(50), index=True)  # 효능 키워드
 
 # [신규] CautionIngredients 테이블
 class CautionIngredients(Base):
@@ -228,7 +229,8 @@ def query_user_caution_ingredients(user_id: int | None, product_tokens: List[str
         print(f"❌ 사용자 주의 성분 정규화 매칭 오류: {e}")
         return []
 
-# --- Matching Logic (기존과 동일) ---
+# --- Matching Logic ---
+# [수정] ingredients 테이블의 keyword 컬럼 사용 (영문 키워드: moisturizing, soothing 등)
 def match_ingredients(ingredients_str: str, db: Session):
     if not ingredients_str:
         return [], {}, [], 0
@@ -237,17 +239,26 @@ def match_ingredients(ingredients_str: str, db: Session):
     matched_stats = defaultdict(list)
     unmatched = []
     normalized_names = list(set(normalize_name(ing) for ing in ingredients_list if normalize_name(ing)))
+    
+    # 원문 성분명 집합
+    orig_set = set(ingredients_list)
 
-    keyword_results = db.query(
-        Ingredients6Keyword.name_normalized,
-        Ingredients6Keyword.keyword
+    # ingredients 테이블에서 keyword 조회 (korean_name 기준)
+    ing_keyword_results = db.query(
+        Ingredients.korean_name,
+        Ingredients.keyword
     ).filter(
-        Ingredients6Keyword.name_normalized.in_(normalized_names)
+        Ingredients.korean_name.in_(orig_set),
+        Ingredients.keyword.isnot(None)
     ).all()
-    keyword_map = defaultdict(set)
-    for norm_name, kw in keyword_results:
-        keyword_map[norm_name].add(kw)
+    
+    # korean_name -> keyword 맵
+    keyword_map = {}
+    for kor_name, kw in ing_keyword_results:
+        if kw:
+            keyword_map[kor_name] = kw  # 이미 영문 키워드 (moisturizing 등)
 
+    # KCIA에서 purpose 조회 (정규화된 이름 기준)
     kcia_results = db.query(
         KCIAIngredients.name_normalized,
         KCIAIngredients.purpose
@@ -259,18 +270,19 @@ def match_ingredients(ingredients_str: str, db: Session):
     for ingredient in ingredients_list:
         normalized = normalize_name(ingredient)
         if not normalized: continue
-        keywords = keyword_map.get(normalized)
+        
+        # keyword는 원문 성분명으로 조회
+        keyword = keyword_map.get(ingredient)
         purpose = purpose_map.get(normalized, '미확인')
 
-        if keywords:
-            for keyword in keywords:
-                kor_keyword = KEYWORD_ENG_TO_KOR.get(keyword, keyword)
-                matched_details.append({
-                    '성분명': ingredient,
-                    '배합목적': purpose,
-                    '효능': kor_keyword
-                })
-                matched_stats[keyword].append(ingredient)
+        if keyword:
+            kor_keyword = KEYWORD_ENG_TO_KOR.get(keyword, keyword)
+            matched_details.append({
+                '성분명': ingredient,
+                '배합목적': purpose,
+                '효능': kor_keyword
+            })
+            matched_stats[keyword].append(ingredient)
         else:
             unmatched.append({
                 '성분명': ingredient,

@@ -5,10 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 전부 backend 패키지 기준 상대 import로 통일
 from routers import (
-    profile, analysis, auth, routine, perfume, user, trends,
+    profile, analysis, auth, routine, user, trends,
     favorite_products, product, ocr, stats, delete, ingredients,
-    search_ingredients,
+    search_ingredients, events,
 )
+# from routers import perfume  # 비활성화: perfumes 테이블 미사용
 from routers import user_ingredients as user_ingredients_router
 from routers.chat import router as chat_router
 from routers import search_ingredients
@@ -45,7 +46,7 @@ app.include_router(profile.router)
 app.include_router(analysis.router)
 app.include_router(auth.router)
 app.include_router(routine.router)
-app.include_router(perfume.router)
+# app.include_router(perfume.router)  # 비활성화
 app.include_router(user.router)
 app.include_router(trends.router)
 app.include_router(favorite_products.router)
@@ -65,6 +66,9 @@ app.include_router(chat_router, prefix="/api")
 
 # chat 라우터: /chat (호환용 별칭, 문서에는 숨김)
 app.include_router(chat_router, include_in_schema=False)
+
+# 이벤트 로깅 라우터
+app.include_router(events.router, prefix="/api")
 
 
 @app.get("/healthz")

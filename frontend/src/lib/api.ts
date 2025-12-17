@@ -211,6 +211,26 @@ export async function addUserIngredient(params: {
     const t = await res.text().catch(() => '');
     throw new Error(`addUserIngredient HTTP ${res.status}: ${t.slice(0, 200)}`);
   }
+
+  // 성분 추가 이벤트 로깅
+  const sessionId = getOrCreateSessionId();
+  console.log('[EVENT] logEvent 호출 (addUserIngredient):', {
+    sessionId,
+    userId: params.userId,
+    eventType: params.ingType === 'preferred' ? 'preference_add' : 'caution_add',
+    targetId: params.koreanName,
+  });
+  logEvent({
+    sessionId,
+    userId: params.userId,
+    eventType: params.ingType === 'preferred' ? 'preference_add' : 'caution_add',
+    eventTarget: 'ingredient',
+    targetId: params.koreanName,
+    eventValue: { korean_name: params.koreanName, ing_type: params.ingType },
+  }).then(res => {
+    console.log('[EVENT] logEvent 응답:', res);
+  });
+
   return res.json();
 }
 
@@ -234,4 +254,195 @@ export async function deleteUserIngredient(
     throw new Error(`deleteUserIngredient HTTP ${res.status}: ${t.slice(0, 200)}`);
   }
   return res.json();
+}
+
+// ------------------------------------------------------------------
+// 이벤트 로깅 API
+// ------------------------------------------------------------------
+
+/** 세션 ID 생성/조회 (localStorage 기반) */
+export function getOrCreateSessionId(): string {
+  const key = 'aller_session_id';
+  let sessionId = localStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+}
+
+/** 세션 생성 */
+export async function createSession(params: {
+  sessionId: string;
+  userId?: number;
+  deviceType: 'mobile' | 'desktop' | 'tablet';
+  referrer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}) {
+  const res = await fetch(`${API_BASE}/api/events/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: params.sessionId,
+      user_id: params.userId,
+      device_type: params.deviceType,
+      referrer: params.referrer,
+      utm_source: params.utmSource,
+      utm_medium: params.utmMedium,
+      utm_campaign: params.utmCampaign,
+    }),
+  });
+  if (!res.ok) {
+    console.warn('세션 생성 실패:', res.status);
+    return null;
+  }
+  return res.json();
+}
+
+/** 일반 이벤트 로깅 */
+export async function logEvent(params: {
+  sessionId: string;
+  userId?: number;
+  eventType: string;
+  eventTarget?: string;  // ingredient, product, etc.
+  targetId?: string;     // 대상 ID
+  eventValue?: Record<string, any>;
+  pageUrl?: string;
+}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/events/log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        user_id: params.userId,
+        event_type: params.eventType,
+        event_target: params.eventTarget,
+        target_id: params.targetId,
+        event_value: params.eventValue ? JSON.stringify(params.eventValue) : undefined,
+        page_url: params.pageUrl || window.location.href,
+      }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('이벤트 로깅 실패:', e);
+    return false;
+  }
+}
+
+/** 검색 이벤트 로깅 */
+export async function logSearch(params: {
+  sessionId: string;
+  userId?: number;
+  queryText: string;
+  queryType: 'ingredient' | 'product' | 'general';
+  searchMethod?: 'text' | 'voice' | 'autocomplete';
+  resultCount?: number;
+  filtersApplied?: Record<string, any>;
+}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/events/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        user_id: params.userId,
+        query_text: params.queryText,
+        query_type: params.queryType,
+        search_method: params.searchMethod || 'text',
+        result_count: params.resultCount || 0,
+        filters_applied: params.filtersApplied ? JSON.stringify(params.filtersApplied) : undefined,
+      }),
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<{ query_id: number }>;
+  } catch (e) {
+    console.warn('검색 로깅 실패:', e);
+    return null;
+  }
+}
+
+/** 검색 결과 클릭 추적 */
+export async function logSearchClick(params: {
+  queryId: number;
+  clickedResults?: number;
+  firstClickPosition?: number;
+  timeToFirstClickMs?: number;
+}) {
+  try {
+    await fetch(`${API_BASE}/api/events/search/click`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query_id: params.queryId,
+        clicked_results: params.clickedResults || 1,
+        first_click_position: params.firstClickPosition,
+        time_to_first_click_ms: params.timeToFirstClickMs,
+      }),
+    });
+  } catch (e) {
+    console.warn('검색 클릭 로깅 실패:', e);
+  }
+}
+
+/** 제품 조회 로깅 */
+export async function logProductView(params: {
+  sessionId: string;
+  userId?: number;
+  productPid: number;
+  source: 'search_result' | 'recommendation' | 'direct' | 'product_detail';
+  position?: number;
+}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/events/product-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        user_id: params.userId,
+        product_pid: params.productPid,
+        source: params.source,
+        position: params.position,
+      }),
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<{ view_id: number }>;
+  } catch (e) {
+    console.warn('제품 조회 로깅 실패:', e);
+    return null;
+  }
+}
+
+/** 추천 피드백 로깅 */
+export async function logRecommendationFeedback(params: {
+  sessionId: string;
+  userId?: number;
+  productPid: number;
+  algorithm: string;
+  position: number;
+  wasClicked?: boolean;
+  wasPurchased?: boolean;
+}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/events/recommendation-feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        user_id: params.userId,
+        product_pid: params.productPid,
+        algorithm: params.algorithm,
+        position: params.position,
+        was_clicked: params.wasClicked,
+        was_purchased: params.wasPurchased,
+      }),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch (e) {
+    console.warn('추천 피드백 로깅 실패:', e);
+    return null;
+  }
 }

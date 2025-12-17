@@ -1,5 +1,5 @@
 // frontend/src/App.tsx (merged & resolved)
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Container, Theme } from './settings/types';
 import BeautyAILogin from './components/BeautyAILogin';
 import SignupForm from './components/SignupForm';
@@ -14,6 +14,7 @@ import { useUserStore } from './stores/auth';
 import Chatbot from './components/Chatbot';
 import { ProfilePage } from './pages/profile';
 import { API_BASE } from './lib/env';
+import { getOrCreateSessionId, createSession } from './lib/api';
 
 let theme: Theme = 'light';
 let container: Container = 'none';
@@ -47,6 +48,27 @@ function App() {
     setFpPrefillEmail(localStorage.getItem('user_email') || undefined);
     setCurrentPage('forgotPassword');
   };
+
+  // ✅ 세션 초기화 (앵 로드 시 1회)
+  useEffect(() => {
+    const initSession = async () => {
+      const sessionId = getOrCreateSessionId();
+      const userId = localStorage.getItem('user_id');
+      const deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+      
+      await createSession({
+        sessionId,
+        userId: userId ? parseInt(userId, 10) : undefined,
+        deviceType,
+        referrer: document.referrer || undefined,
+        utmSource: new URLSearchParams(window.location.search).get('utm_source') || undefined,
+        utmMedium: new URLSearchParams(window.location.search).get('utm_medium') || undefined,
+        utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign') || undefined,
+      });
+    };
+
+    initSession();
+  }, []);
 
   // ✅ 로그인 화면에서 비밀번호 찾기 눌렀을 때
   const handleNavigateForgotPassword = () => {
