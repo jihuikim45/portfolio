@@ -1,172 +1,99 @@
 <!-- Improved compatibility of back to top link -->
+
 <a id="readme-top"></a>
 
 <br />
 <div align="center">
-  <a href="https://github.com/Team-Alere/Alere">
+  <a href="https://github.com/jihuikim45/portfolio">
     <img src="./images/aller_logo.png" alt="Logo" width="200" height="140">
   </a>
 
-<h3 align="center">💄 Alere — 챗봇 기반 화장품 상담 서비스</h3>
+<h3 align="center">Alere — 추천이 아니라, 선택을 설계하다</h3>
 
   <p align="center">
-    AI가 통합한 데이터(수천 개 리뷰 + 상품, 성분 분석 + 효능 데이터)를 통해 화장품 성분 분석 및 구매 가이드를 제공하는 플랫폼 
+  화장품 추천 서비스는 많지만, 사용자는 여전히 같은 질문을 반복한다.
+  
+  "왜 이 제품이 나에게 맞는지 모르겠다."
+  
+  Aller는 이 질문에서 출발했다.
+  문제는 추천 알고리즘의 정확도가 아니라, 사용자가 선택 과정에 참여하지 못한다는 점이라고 판단했다.
   </p>
 </div>
 
 ---
 
-<details>
-  <summary>📋 Table of Contents</summary>
+## What Aller Is
 
-  - <a href="#team-members">Team Members</a>
-  - <a href="#about-the-project">About The Project</a>
-  - <a href="#built-with">Built With</a>
-  - <a href="#key-features">Key Features</a>
-  - <a href="#system-architecture">System Architecture</a>
-  - <a href="#erd">ERD</a>
-  - <a href="#getting-started">Getting Started</a>
-  - <a href="#usage">Usage</a>
-  - <a href="#contact">Contact</a>
+Aller는 화장품을 대신 골라주는 서비스가 아니다.
+사용자가 스스로 판단할 수 있도록 선택의 기준을 설계한 서비스다.
 
-</details>
+피부 타입을 먼저 정의하고, 성분을 직접 비교·탐색하며 그 선택 과정 전체를 데이터로 기록한다. 이 구조를 통해 추천이 실제 행동으로 이어졌는지를 검증할 수 있도록 설계했다.
 
 ---
 
-<a id="team-members"></a>
-## 👥 Team Members
+## Core Features
 
-<div align="center">
+| 기능                 | 설명                                                                        |
+| -------------------- | --------------------------------------------------------------------------- |
+| 가상 피부 시뮬레이션 | 바우만 피부 타입 기반으로 화장품 성분을 비교·분석하고, 적합도를 점수로 제공 |
+| 피부 타입 간단 진단  | 설문 기반 바우만 피부 타입 간이 테스트                                      |
+| 성분 검색·비교       | 성분 키워드 검색 및 성분 간 비교 탐색                                       |
+| 실시간 AI 추천       | Pinecone 벡터 검색 기반 유사 제품 실시간 추천                               |
+| OCR 성분 분석        | 제품 사진 업로드 → 성분 자동 추출 → 주의 성분 시각적 표시                   |
 
-| <img src="./images/member_bhj.png" width="120" height="120"> | <img src="./images/member_kjh.png" width="120" height="120"> | <img src="./images/member_leeu.png" width="120" height="120"> | <img src="./images/member_ljs.png" width="120" height="120"> | <img src="./images/member_psj.png" width="120" height="120"> |
-|:--:|:--:|:--:|:--:|:--:|
-| 🧠 **배형진**<br>팀 리더 / 백엔드 | 💻 **김지희**<br>프론트엔드 / 데이터 분석 | 🧾 **이은영**<br>프론트엔드 / 데이터 분석 | ⚙️ **이정석**<br>백엔드 | 🎤 **박상준**<br>발표자 / 문서화 |
-| FastAPI · 데이터 파이프라인 · AI 모델 연동 · 배포 | React · Next.js · UI/UX · 추천 루틴 설계 | 문서 · 추천 루틴 설계 · 테스트 시나리오 작성 | 데이터 파이프라인 · Pinecone 임베딩 · 유사도 계산 | 성분 DB 구축 · 피부타입 점수 계산 · README 정리 |
-
-</div>
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+※ 모든 기능은 MVP 범위 내에서 실제 동작하도록 구현됨
 
 ---
 
-<a id="about-the-project"></a>
-## 🧠 About The Project
+## User Flow
 
-> **Alere**는 사용자의 피부 타입, 성분 분석, 리뷰 기반 데이터 시각화를 통해  
-> “피부에 맞는 화장품과 향수, 케어 루틴을 자동 추천하는 AI 기반 플랫폼”입니다.  
+Aller는 아래와 같은 선택 중심 흐름으로 설계되었다.
 
-💧 바우만 피부타입 분석 + 📷 성분 추출(OCR) + 🔍 실시간 상담 챗팅 +  
-💡 가상 피부 시뮬레이션 + 맞춤형 루틴 추천까지 한 번에 제공합니다.
+유입 → 피부 타입 진단 → 가상 피부 시뮬레이션 / 성분 탐색 → 추천 조건 형성 → AI 추천 결과 확인 → 이탈 또는 재방문
 
-![Product Screenshot][Product Screenshot]
-
-[Product Screenshot]: ./images/product_screenshot.png
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+이 흐름의 목적은 **사용자가 왜 그 제품을 선택했는지**를 이해하게 만드는 것이다.
 
 ---
 
-<a id="built-with"></a>
-## ⚙️ Built With
+## Data-Driven Design
 
-이 프로젝트는 여러 최신 기술 스택을 통합하여 구성되었습니다.
+Aller의 핵심은 기능보다 데이터 구조다.  
+사용자의 모든 주요 선택은 이벤트로 기록된다.
 
-* ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-* ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-* ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-* ![Airflow](https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=apache-airflow&logoColor=white)
-* ![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
-* ![Pinecone](https://img.shields.io/badge/Pinecone-00A0DC?style=for-the-badge&logo=pinecone&logoColor=white)
+- 설문 시작 / 완료
+- 성분 검색
+- 시뮬레이션 결과 조회
+- AI 추천 노출 및 클릭
+- OCR 성분 확인
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-<a id="key-features"></a>
-## 🌟 Key Features
-
-| 기능명 | 설명 |
-|--------|------|
-| 🧬 가상피부 시뮬레이션 | 사용자의 피부 타입(바우만 피부타입)을 기반으로 화장품 성분 즉시 비교 분석, 객관적인 점수로 반환 |
-| 💐 맞춤 향수 추천 | 사용자 선택 기반 향 성분 매칭을 통한 맞춤형 향수 추천 |
-| 💧 맞춤 케어 루틴 추천 | 계절, 시간대별, 사용사 선택 키워드 반영한 루틴을 추천 |
-| 🔍 피부타입 간단 진단 | 설문 기반 바우만 피부타입 간이 테스트 |
-| 📊 리뷰 기반 시각화 | 리뷰 데이터를 이용한 인기 제품 탐색, 리뷰 증가율 및 평점 기반 랭킹 시각화 |
-| ⚡ 실시간 화장품 AI 추천 | Pinecone 벡터 검색 기반 유사 제품 실시간 추천 |
-| 🧾 OCR 연동 성분 분석 | 사진 업로드 → 성분 자동 추출 → 주의성분 색상 표시 |
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+이 데이터는 **추천이 실제 행동으로 이어졌는지**를 검증하는 근거가 된다.  
+Aller의 개인화는 추측이 아니라, 행동 데이터 위에서 검증된다.
 
 ---
 
-<a id="system-architecture"></a>
-## 🏗 System Architecture
+## Tech Stack (Why These)
 
-```text
-[사용자]
-   ↓ (React / Next.js)
-[프론트엔드]
-   ↓ REST API
-[FastAPI 백엔드] ──▶ [AI 분석 모듈 (Python, Pinecone)]
-   ↓
-[MariaDB / Airflow 파이프라인]
-
-Airflow : 매주 목요일, 리뷰 트렌드 데이터 자동 수집 및 분석
-Pinecone : 성분 유사도 기반 실시간 추천
-Next.js + React : 클라이언트 UI 및 대시보드
-FastAPI : 모델 연동 및 API 게이트웨이 
-```
-![System Architecture][System Architecture]
-
-[System Architecture]: ./images/system_architecture.png
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
---- 
-
-<a id="erd"></a>
-## 🕸️ ERD
-
-![ERD][erd]
-
-[erd]: ./images/ERD.png
+| 영역          | 기술                    | 선택 이유                                       |
+| ------------- | ----------------------- | ----------------------------------------------- |
+| Backend       | Python, FastAPI         | 사용자 행동 이벤트를 API 단위로 안정적으로 수집 |
+| Database      | MySQL                   | 세션·이벤트 중심 관계형 데이터 설계             |
+| Vector Search | Pinecone                | 유사 제품 실시간 추천을 위한 벡터 검색          |
+| Search        | Elasticsearch           | 성분·제품 탐색 경험 강화                        |
+| Analysis      | SQL                     | 추천 전·후 행동 변화 및 이탈 분석               |
+| OCR           | 이미지 기반 텍스트 추출 | 성분 입력 장벽 제거                             |
 
 ---
 
-<a id="getting-started"></a>
-## 🚀 Getting Started
+## What This Project Proves
 
-#### 1. 저장소 클론
-git clone https://github.com/Team-Alere/Alere.git
-cd Alere
+이 프로젝트를 통해 보여주고 싶었던 것은 세 가지다.
 
-#### 2. 백엔드 설치
-pip install -r requirements.txt
+1. 기능 나열이 아닌 사용자 선택 흐름 설계 능력
+2. 추천 서비스를 데이터 검증 가능한 구조로 설계하는 사고
+3. 할 수 있는 것을 다 넣기보다 어디에 집중할지 판단하는 기획 역량
 
-#### 3. 프론트엔드 설치
-cd frontend
-npm install
+## 📧 Contact
 
----
-
-<a id="usage"></a>
-## 💻 Usage
-
-#### 백엔드 실행
-uvicorn main:app --reload
-
-#### 프론트엔드 실행
-npm run dev
-브라우저에서 http://localhost:5173 접속 후
-피부타입 분석, OCR 분석, 맞춤 추천 기능을 바로 체험할 수 있습니다.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-<a id="contact"></a>
-## 📫 Contact
-Team Alere
-문의: team.alere@gmail.com
-프로젝트 링크: https://github.com/Team-Alere/Alere
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Data Analysis  
+문의: kimjihui45@gmail.com  
+프로젝트 링크: https://github.com/jihuikim45/portfolio
