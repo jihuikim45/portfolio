@@ -32,6 +32,9 @@ import {
   uploadOcrImage,
   IngredientInfo,
   fetchIngredientDetail,
+  logEvent,
+  logRecommendationFeedback,
+  getOrCreateSessionId,
 } from '@/lib/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -64,6 +67,7 @@ interface Message {
   products?: RecProduct[];
   analysis?: any;
   ocrImageUrl?: string | null;
+  recommendationId?: string;  // 추천 피드백 추적용
 }
 
 /** caution 등급 정렬/표시용 타입 */
@@ -384,10 +388,30 @@ function IngredientModal({
       if (isPreferred) {
         await deleteUserIngredient();
         setIsPreferred(false);
+        
+        // ✅ 선호 성분 제거 이벤트 로깅
+        logEvent({
+          sessionId: getOrCreateSessionId(),
+          userId: parseInt(userId, 10),
+          eventType: 'preference_remove',
+          eventTarget: 'ingredient',
+          targetId: targetName,
+          pageUrl: window.location.href,
+        });
       } else {
         await saveUserIngredient('preferred');
         setIsPreferred(true);
         setIsCaution(false);
+        
+        // ✅ 선호 성분 추가 이벤트 로깅
+        logEvent({
+          sessionId: getOrCreateSessionId(),
+          userId: parseInt(userId, 10),
+          eventType: 'preference_add',
+          eventTarget: 'ingredient',
+          targetId: targetName,
+          pageUrl: window.location.href,
+        });
       }
     } catch (err) {
       console.error('선호 성분 토글 실패:', err);
@@ -405,10 +429,30 @@ function IngredientModal({
       if (isCaution) {
         await deleteUserIngredient();
         setIsCaution(false);
+        
+        // ✅ 주의 성분 제거 이벤트 로깅
+        logEvent({
+          sessionId: getOrCreateSessionId(),
+          userId: parseInt(userId, 10),
+          eventType: 'caution_remove',
+          eventTarget: 'ingredient',
+          targetId: targetName,
+          pageUrl: window.location.href,
+        });
       } else {
         await saveUserIngredient('caution');
         setIsCaution(true);
         setIsPreferred(false);
+        
+        // ✅ 주의 성분 추가 이벤트 로깅
+        logEvent({
+          sessionId: getOrCreateSessionId(),
+          userId: parseInt(userId, 10),
+          eventType: 'caution_add',
+          eventTarget: 'ingredient',
+          targetId: targetName,
+          pageUrl: window.location.href,
+        });
       }
     } catch (err) {
       console.error('주의 성분 토글 실패:', err);
@@ -678,6 +722,21 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
 
   // 성분 모달 열기
   async function openIngredientModal(name: string) {
+    console.log('=== openIngredientModal 호출됨 ===', name);  // 디버그용
+    
+    // ✅ 성분 클릭 이벤트 로깅
+    const sessionId = getOrCreateSessionId();
+    console.log('sessionId:', sessionId, 'userId:', userId);  // 디버그용
+    
+    logEvent({
+      sessionId,
+      userId: userId ? parseInt(userId, 10) : undefined,
+      eventType: 'ingredient_click',
+      eventTarget: 'ingredient',
+      targetId: name,
+      pageUrl: window.location.href,
+    }).then(res => console.log('logEvent 결과:', res));
+
     setIngModalOpen(true);
     setIngTargetName(name);
     setIngError(null);
@@ -728,6 +787,16 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
           setToastMessage('즐겨찾기에서 제거되었습니다 💔');
           setShowToast(true);
           setTimeout(() => setShowToast(false), 2000);
+
+          // ✅ 즐겨찾기 제거 이벤트 로깅
+          logEvent({
+            sessionId: getOrCreateSessionId(),
+            userId: parseInt(userId, 10),
+            eventType: 'favorite_remove',
+            eventTarget: 'product',
+            targetId: String(productId),
+            pageUrl: window.location.href,
+          });
         }
       } else {
         const res = await fetch(
@@ -739,6 +808,16 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
           setToastMessage('즐겨찾기에 추가되었습니다 💗');
           setShowToast(true);
           setTimeout(() => setShowToast(false), 2000);
+
+          // ✅ 즐겨찾기 추가 이벤트 로깅
+          logEvent({
+            sessionId: getOrCreateSessionId(),
+            userId: parseInt(userId, 10),
+            eventType: 'favorite_add',
+            eventTarget: 'product',
+            targetId: String(productId),
+            pageUrl: window.location.href,
+          });
         }
       }
     } catch (err) {
@@ -802,7 +881,24 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
 
       // 3) 제품 카드 붙이기
       const products = rec.products || [];
-      setMessages(prev => prev.map(m => (m.id === aiMsgId ? { ...m, products } : m)));
+      
+      // ✅ 추천 노출 이벤트 로깅
+      let recommendationId: string | undefined;
+      if (products.length > 0) {
+        recommendationId = crypto.randomUUID();
+        const sessionId = getOrCreateSessionId();
+        
+        logRecommendationFeedback({
+          sessionId,
+          userId: userId ? parseInt(userId, 10) : undefined,
+          recommendationId,
+          algorithmType: 'routine',
+          contextType: 'search_result',
+          shownProducts: products.map(p => p.pid),
+        });
+      }
+      
+      setMessages(prev => prev.map(m => (m.id === aiMsgId ? { ...m, products, recommendationId } : m)));
 
       // 4) 최근 추천 기록 저장
       try {
@@ -1146,6 +1242,18 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
                                             href={p.product_url}
                                             target="_blank"
                                             rel="noreferrer"
+                                            onClick={() => {
+                                              // ✅ 외부 링크 클릭(outbound_click) 이벤트 로깅
+                                              logEvent({
+                                                sessionId: getOrCreateSessionId(),
+                                                userId: userId ? parseInt(userId, 10) : undefined,
+                                                eventType: 'outbound_click',
+                                                eventTarget: 'product',
+                                                targetId: String(p.pid),
+                                                eventValue: { url: p.product_url, product_name: p.product_name },
+                                                pageUrl: window.location.href,
+                                              });
+                                            }}
                                             className="text-xs text-white px-3 py-1 rounded-lg"
                                             style={{
                                               background:

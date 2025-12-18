@@ -11,6 +11,8 @@ export const useIngredients = () => {
   const [nextPage, setNextPage] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
+  const [lastQueryId, setLastQueryId] = useState<number | null>(null);
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
 
   // 현재 검색어 추적 (debounce 내부에서 새 검색 여부 판단용)
   const currentQueryRef = useRef('');
@@ -24,6 +26,7 @@ export const useIngredients = () => {
         setHasMore(false);
         setTotal(0);
         currentQueryRef.current = '';
+        setLastQueryId(null);
         return;
       }
 
@@ -32,6 +35,7 @@ export const useIngredients = () => {
       if (isNewSearch) {
         currentQueryRef.current = query;
         page = 1;
+        setSearchStartTime(Date.now());
       }
 
       setIsLoading(true);
@@ -55,18 +59,31 @@ export const useIngredients = () => {
         // 검색 이벤트 로깅 (첫 페이지만)
         if (page === 1 && result.items.length > 0) {
           const sessionId = getOrCreateSessionId();
-          console.log('[EVENT] logSearch 호출:', { sessionId, query, resultCount: result.total });
+          const userIdStr = localStorage.getItem('user_id');
+          const userId = userIdStr ? parseInt(userIdStr, 10) : undefined;
+          console.log('[EVENT] logSearch 호출:', {
+            sessionId,
+            userId,
+            query,
+            resultCount: result.total,
+          });
           logSearch({
             sessionId,
+            userId,
             queryText: query,
             queryType: 'ingredient',
             searchMethod: 'text',
             resultCount: result.total,
-          }).then(res => {
-            console.log('[EVENT] logSearch 응답:', res);
-          }).catch(err => {
-            console.error('[EVENT] logSearch 에러:', err);
-          });
+          })
+            .then(res => {
+              console.log('[EVENT] logSearch 응답:', res);
+              if (res?.query_id) {
+                setLastQueryId(res.query_id);
+              }
+            })
+            .catch(err => {
+              console.error('[EVENT] logSearch 에러:', err);
+            });
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to search ingredients');
@@ -119,5 +136,7 @@ export const useIngredients = () => {
     hasMore,
     loadMore,
     findIngredient,
+    lastQueryId,
+    searchStartTime,
   };
 };

@@ -1,3 +1,5 @@
+from typing import List, Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -5,6 +7,18 @@ from db import get_db
 
 router = APIRouter(prefix="/routine", tags=["routine"])
 
+class RoutineItem(BaseModel):
+    step: str
+    product_pid: int
+    display_name: str
+    image_url: Optional[str] = None
+    reason: str
+    review_count: int
+    price_krw: Optional[int] = None
+    capacity: Optional[str] = None
+    product_url: Optional[str] = None
+    description: Optional[str] = None
+    
 CATEGORY_ORDER = ["스킨/토너", "에센스/세럼/앰플", "로션", "크림"]
 
 FOCUS_RULES = {
@@ -15,13 +29,13 @@ FOCUS_RULES = {
 }
 
 
-@router.get("/recommend")
+@router.get("/recommend", response_model=List[RoutineItem])
 def recommend_routine(
     skin_type: str = Query(..., description="사용자 피부타입 (예: DRNT)"),
     season: str = Query(..., description="계절 (여름/겨울)"),
     time: str = Query(..., description="시간대 (아침/저녁)"),
     keywords: str = Query("", description="사용자가 직접 선택한 키워드 (쉼표 구분, 최대 2개)"),
-    top_n: int = 1,
+    top_n: int = Query(1, ge=1, le=5, description="카테고리별 추천 개수(기본 1)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -86,7 +100,7 @@ def recommend_routine(
                 "display_name": f"{r['brand']} - {r['product_name']}",
                 "image_url": r["image_url"],
                 "reason": reason,  # 키워드 기반 근거
-                "review_count": r.get("review_count", 0),  # 별도 저장
+                "review_count": r["review_count"] if r["review_count"] is not None else 0,  # 별도 저장
                 "price_krw": r.get("price_krw"),
                 "capacity": r.get("capacity"),
                 "product_url": r.get("product_url"),

@@ -5,21 +5,46 @@ import { Ingredient, IngredientType } from '@/entities/ingredient';
 import { useIngredients } from '@/shared/lib/hooks';
 import { IngredientAutocomplete } from './IngredientAutocomplete';
 import { AddIngredientModal } from './AddIngredientModal';
+import { logSearchClick } from '@/lib/api';
 
 export interface IngredientSearchSectionProps {
   onAddIngredient: (ingredient: Ingredient, type: IngredientType) => void;
 }
 
 export const IngredientSearchSection = ({ onAddIngredient }: IngredientSearchSectionProps) => {
-  const { ingredients, isLoading, searchQuery, setSearchQuery, hasMore, loadMore } =
-    useIngredients();
+  const {
+    ingredients,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    hasMore,
+    loadMore,
+    lastQueryId,
+    searchStartTime,
+  } = useIngredients();
 
   console.log('ingredients', ingredients);
 
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSelectIngredient = (ingredient: Ingredient) => {
+  // position 파라미터 추가
+  const handleSelectIngredient = (ingredient: Ingredient, position: number) => {
+    if (lastQueryId) {
+      const timeToClick = searchStartTime ? Date.now() - searchStartTime : undefined;
+      console.log('[EVENT] logSearchClick 호출:', {
+        queryId: lastQueryId,
+        position,
+        timeToClick,
+      });
+      logSearchClick({
+        queryId: lastQueryId,
+        clickedResults: 1,
+        firstClickPosition: position,
+        timeToFirstClickMs: timeToClick,
+      });
+    }
+
     setSelectedIngredient(ingredient);
     setIsModalOpen(true);
     setSearchQuery(''); // 선택 후 검색어 초기화

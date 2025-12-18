@@ -9,7 +9,7 @@ export interface IngredientAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   suggestions: Ingredient[];
-  onSelect: (ingredient: Ingredient) => void;
+  onSelect: (ingredient: Ingredient, position: number) => void;
   placeholder?: string;
   isLoading?: boolean;
   hasMore?: boolean;
@@ -85,7 +85,7 @@ export const IngredientAutocomplete = ({
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-          onSelect(suggestions[selectedIndex]);
+          onSelect(suggestions[selectedIndex], selectedIndex + 1);
           setIsFocused(false);
           setSelectedIndex(-1);
         }
@@ -142,7 +142,7 @@ export const IngredientAutocomplete = ({
                 <button
                   key={ingredient.id}
                   onClick={() => {
-                    onSelect(ingredient);
+                    onSelect(ingredient, index + 1);
                     setIsFocused(false);
                     setSelectedIndex(-1);
                   }}

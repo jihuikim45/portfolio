@@ -7,7 +7,7 @@
 - 상품 조회 로깅
 - 추천 피드백 로깅
 """
-
+import re
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -15,6 +15,35 @@ from typing import Optional, List
 from datetime import datetime
 from db import get_db
 from models import UserSession, EventLog, SearchQuery, ProductViewLog, RecommendationFeedback
+
+
+# ───────────────────────────────────────────────
+# 검색어 정규화 함수
+# ───────────────────────────────────────────────
+
+def normalize_query_text(text: str) -> str:
+    """
+    검색어 정규화:
+    - 공백 제거/정리
+    - 소문자 변환 (영문)
+    - 특수문자 제거
+    """
+    if not text:
+        return ""
+    
+    # 앞뒤 공백 제거
+    normalized = text.strip()
+    
+    # 연속 공백을 단일 공백으로
+    normalized = re.sub(r'\s+', ' ', normalized)
+    
+    # 영문 소문자 변환
+    normalized = normalized.lower()
+    
+    # 특수문자 제거 (한글, 영문, 숫자, 공백만 남김)
+    normalized = re.sub(r'[^\w\s가-힣]', '', normalized)
+    
+    return normalized
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -219,6 +248,7 @@ def log_search(request: SearchEventRequest, db: Session = Depends(get_db)):
         session_id=request.session_id,
         user_id=request.user_id,
         query_text=request.query_text,
+        query_text_normalized=normalize_query_text(request.query_text),
         query_type=request.query_type,
         search_method=request.search_method,
         result_count=request.result_count,
