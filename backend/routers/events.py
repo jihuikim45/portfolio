@@ -150,32 +150,38 @@ def create_session(request: SessionCreateRequest, db: Session = Depends(get_db))
     """
     새 세션 생성 (사용자가 사이트 방문 시)
     """
+    from sqlalchemy.exc import IntegrityError
+    
     # 이미 존재하는 세션인지 확인
     existing = db.query(UserSession).filter_by(session_id=request.session_id).first()
     if existing:
         return {"message": "세션이 이미 존재합니다", "session_id": request.session_id}
     
-    session = UserSession(
-        session_id=request.session_id,
-        user_id=request.user_id,
-        device_type=request.device_type,
-        browser=request.browser,
-        os=request.os,
-        referrer_source=request.referrer_source,
-        referrer_url=request.referrer_url,
-        utm_source=request.utm_source,
-        utm_medium=request.utm_medium,
-        utm_campaign=request.utm_campaign,
-        landing_page=request.landing_page,
-        started_at=datetime.utcnow(),
-        page_view_count=0,
-        event_count=0,
-        is_bounce=1  # 기본값: bounce (1페이지만 보면 bounce)
-    )
-    db.add(session)
-    db.commit()
-    
-    return {"message": "세션 생성 완료", "session_id": request.session_id}
+    try:
+        session = UserSession(
+            session_id=request.session_id,
+            user_id=request.user_id,
+            device_type=request.device_type,
+            browser=request.browser,
+            os=request.os,
+            referrer_source=request.referrer_source,
+            referrer_url=request.referrer_url,
+            utm_source=request.utm_source,
+            utm_medium=request.utm_medium,
+            utm_campaign=request.utm_campaign,
+            landing_page=request.landing_page,
+            started_at=datetime.utcnow(),
+            page_view_count=0,
+            event_count=0,
+            is_bounce=1  # 기본값: bounce (1페이지만 보면 bounce)
+        )
+        db.add(session)
+        db.commit()
+        return {"message": "세션 생성 완료", "session_id": request.session_id}
+    except IntegrityError:
+        # 중복 세션 (race condition 대응)
+        db.rollback()
+        return {"message": "세션이 이미 존재합니다", "session_id": request.session_id}
 
 
 @router.patch("/session")
@@ -213,6 +219,27 @@ def log_event(request: EventLogRequest, db: Session = Depends(get_db)):
     """
     일반 이벤트 기록 (클릭, 페이지뷰, 성분 추가 등)
     """
+    from sqlalchemy.exc import IntegrityError
+    
+    # 세션이 없으면 자동 생성
+    session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    if not session:
+        try:
+            session = UserSession(
+                session_id=request.session_id,
+                user_id=request.user_id,
+                device_type='unknown',
+                started_at=datetime.utcnow(),
+                page_view_count=0,
+                event_count=0,
+                is_bounce=1
+            )
+            db.add(session)
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    
     event = EventLog(
         session_id=request.session_id,
         user_id=request.user_id,
@@ -226,7 +253,6 @@ def log_event(request: EventLogRequest, db: Session = Depends(get_db)):
     db.add(event)
     
     # 세션의 이벤트 카운트 증가
-    session = db.query(UserSession).filter_by(session_id=request.session_id).first()
     if session:
         session.event_count = (session.event_count or 0) + 1
     

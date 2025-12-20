@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard,
+  Home,
   MessageSquare,
   UserCircle,
   Settings as SettingsIcon,
@@ -18,8 +18,8 @@ export const ProfileBottomNav = ({ onNavigate }: ProfileBottomNavProps) => {
           onClick={() => onNavigate?.('dashboard')}
           className="flex flex-col items-center space-y-1 text-gray-500 hover:text-pink-600 transition-colors"
         >
-          <LayoutDashboard className="w-6 h-6" />
-          <span className="text-xs">대시보드</span>
+          <Home className="w-6 h-6" />
+          <span className="text-xs">홈</span>
         </button>
         {/* ✅ 추천받기 버튼 - AI 상담 앞으로 이동 */}
         <button

@@ -12,8 +12,19 @@ import TrendsSection from './TrendsSection';
 // 우측 카드(피부타입 가이드)
 import SkinTypeGuide from './SkinTypeGuide';
 
+// 검색 섹션 (실험: 대시보드 상단 노출)
+import { IngredientSearchSection } from '@/features/add-ingredient';
+import { Ingredient, IngredientType } from '@/entities/ingredient';
+import { useUserStore } from '@/stores/auth/store';
+import { logEvent, getOrCreateSessionId } from '@/lib/api';
+import { API_BASE } from '@/lib/env';
+
 // 아이콘
-import { TestTube2, Sparkles, ArrowRight, RefreshCcw } from 'lucide-react';
+import { TestTube2, Sparkles, ArrowRight, RefreshCcw, Search } from 'lucide-react';
+
+// 토스트
+import { SimpleToast } from '@/shared/ui';
+import { useToast } from '@/shared';
 
 export interface DashboardProps {
   userName?: string;
@@ -31,6 +42,11 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
   const [baumannType, setBaumannType] = useState<string>(''); // ← 빈 문자열로 초기화
   const [axes, setAxes] = useState<AxesJSON | null>(null);
   const [userId, setUserId] = useState<number | undefined>(undefined);
+
+  // --- 검색 관련 상태 ---
+  const { name, preferredIngredients, cautionIngredients } = useUserStore();
+  const { toast, showToast } = useToast();
+  const [isAddingIngredient, setIsAddingIngredient] = useState(false);
 
   // --- 축/라벨 계산 ---
   const code = (baumannType || 'ORNT').toUpperCase();
@@ -130,6 +146,99 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
     })();
   }, [userId]);
 
+  // --- 성분 추가 핸들러 (대시보드용) ---
+  const handleAddIngredient = async (ingredient: Ingredient, type: IngredientType) => {
+    if (!userId) {
+      showToast('로그인이 필요합니다', 'warning');
+      return;
+    }
+
+    if (!ingredient.korean_name?.trim()) {
+      showToast('성분명이 올바르지 않습니다', 'warning');
+      return;
+    }
+
+    // 중복 체크
+    const isDuplicate =
+      type === 'preferred'
+        ? preferredIngredients.some(i => i.name === ingredient.korean_name)
+        : cautionIngredients.some(i => i.name === ingredient.korean_name);
+
+    if (isDuplicate) {
+      showToast('이미 추가된 성분입니다', 'warning');
+      return;
+    }
+
+    setIsAddingIngredient(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/user-ingredients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          userName: name || '',
+          koreanName: ingredient.korean_name,
+          ingType: type,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          showToast('이미 추가된 성분입니다', 'warning');
+          return;
+        }
+        throw new Error('Failed to add ingredient');
+      }
+
+      // 성분 추가 이벤트 로깅
+      const sessionId = getOrCreateSessionId();
+      logEvent({
+        sessionId,
+        userId,
+        eventType: type === 'preferred' ? 'preference_add' : 'caution_add',
+        eventTarget: 'ingredient',
+        targetId: ingredient.korean_name,
+        eventValue: { 
+          korean_name: ingredient.korean_name, 
+          ing_type: type,
+          source: 'dashboard_search'  // 대시보드에서 추가됨을 표시
+        },
+      });
+
+      // Store 업데이트
+      const newIngredient = {
+        id: Date.now(),
+        name: ingredient.korean_name,
+        ...(type === 'preferred'
+          ? { benefit: ingredient.description || '' }
+          : {
+              reason: ingredient.description || '',
+              severity: (ingredient.caution_grade?.includes('고')
+                ? 'high'
+                : ingredient.caution_grade?.includes('중')
+                  ? 'mid'
+                  : 'low') as 'low' | 'mid' | 'high',
+            }),
+      };
+
+      useUserStore.getState().addIngredient({
+        ...newIngredient,
+        type,
+      });
+
+      showToast(
+        `${ingredient.korean_name}을(를) ${type === 'preferred' ? '선호' : '주의'} 성분에 추가했습니다`,
+        'success'
+      );
+    } catch (error) {
+      console.error('성분 추가 실패:', error);
+      showToast('성분 추가에 실패했습니다', 'error');
+    } finally {
+      setIsAddingIngredient(false);
+    }
+  };
+
   // ▼ 진단 필요 컴포넌트
   const DiagnosisNeeded = () => (
     <div className="relative flex flex-col items-center justify-center p-6 sm:p-8 text-center min-h-[400px] overflow-hidden">
@@ -217,6 +326,11 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
       <DashboardHeader userName={userName} onNavigate={onNavigate} currentPage="dashboard" />
 
       <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-7xl">
+        {/* === 검색 섹션 (실험: Treatment 그룹) === */}
+        <section className="mb-6">
+          <IngredientSearchSection onAddIngredient={handleAddIngredient} />
+        </section>
+
         {/* === 상단: 하나의 대형 카드(2열) === */}
         <section className="rounded-2xl bg-white shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2">
@@ -248,7 +362,10 @@ export default function Dashboard({ userName = 'Sarah', onNavigate }: DashboardP
         </div> */}
       </main>
 
-      {/* <DashboardBottomNav onNavigate={onNavigate} currentPage="dashboard" /> */}
+      <DashboardBottomNav onNavigate={onNavigate} currentPage="dashboard" />
+
+      {/* Toast */}
+      <SimpleToast message={toast.message || ''} isVisible={toast.isVisible} />
     </div>
   );
 }

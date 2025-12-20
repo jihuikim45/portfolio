@@ -54,7 +54,7 @@ class UserProfileResponse(BaseModel):
     gender: Optional[str] = None
     skinType: Optional[str] = None 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- API Router (기존과 동일) ---
 router = APIRouter(

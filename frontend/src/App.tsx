@@ -7,6 +7,8 @@ import Dashboard from './components/dashboard/Dashboard';
 import UserProfile from './components/UserProfile';
 import Settings from './components/Settings';
 import SkinDiagnosis from './components/dashboard/SkinDiagnosis';
+import AnalyticsDashboard from './components/dashboard/AnalyticsDashboard';
+import ABTestDashboard from './components/dashboard/ABTestDashboard';
 import Survey from './components/dashboard/Survey';
 import ForgotPassword from './components/ForgotPassword';
 import Features from './components/Features';
@@ -29,7 +31,9 @@ type PageType =
   | 'settings'
   | 'diagnosis'
   | 'survey'
-  | 'forgotPassword';
+  | 'forgotPassword'
+  | 'analytics'
+  | 'abtest';
 
 function App() {
   // TODO: LocalStrorage 에도 저장해야 한다.
@@ -156,7 +160,9 @@ function App() {
       page === 'settings' ||
       page === 'diagnosis' ||
       page === 'survey' ||
-      page === 'forgotPassword'
+      page === 'forgotPassword' ||
+      page === 'analytics' ||
+      page === 'abtest'
     ) {
       setCurrentPage(page as PageType);
     }
@@ -243,6 +249,12 @@ function App() {
             currentPage="settings"
           />
         );
+
+      case 'analytics':
+        return <AnalyticsDashboard userName={userName} onNavigate={handleNavigate} />;
+
+      case 'abtest':
+        return <ABTestDashboard userName={userName} onNavigate={handleNavigate} />;
 
       case 'forgotPassword':
         return (

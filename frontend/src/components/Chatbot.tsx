@@ -1005,7 +1005,7 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col pb-16 md:pb-0"
+      className="min-h-screen w-full flex flex-col pb-20 md:pb-0"
       style={{ background: 'linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #ddd6fe 100%)' }}
     >
       {/* Toast */}
@@ -1040,7 +1040,7 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
             transition={{ duration: 0.5 }}
             className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col flex-1 min-h-0 relative"
           >
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-20 md:pb-6 space-y-3 sm:space-y-4">
               <AnimatePresence>
                 {messages.map(message => (
                   <motion.div
@@ -1079,7 +1079,7 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
                       )}
 
                       <div
-                        className={`rounded-2xl p-3 sm:p-4 ${
+                        className={`rounded-2xl p-3 sm:p-4 overflow-hidden ${
                           message.type === 'user' ? 'text-white' : 'bg-gray-100 text-gray-800'
                         }`}
                         style={
@@ -1097,7 +1097,7 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
                         )}
 
                         {message.type === 'ai' ? (
-                          <div className="prose prose-sm max-w-none leading-relaxed">
+                          <div className="prose prose-sm max-w-none leading-relaxed break-words">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.content || ''}
                             </ReactMarkdown>
@@ -1156,41 +1156,43 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
                                   className="relative p-3 sm:p-4 bg-white rounded-lg border border-gray-200"
                                 >
                                   <div className="flex items-start gap-3">
-                                    {/* 즐겨찾기 하트 버튼 */}
-                                    <button
-                                      onClick={() => toggleFavorite(Number(p.pid))}
-                                      className={`absolute top-2 right-2 p-1.5 rounded-full transition ${
-                                        favorites.includes(Number(p.pid))
-                                          ? 'bg-pink-500 text-white'
-                                          : 'bg-white text-pink-500 hover:bg-pink-100'
-                                      }`}
-                                    >
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className={`w-4 h-4 ${
-                                          favorites.includes(Number(p.pid))
-                                            ? 'fill-white'
-                                            : 'fill-none'
-                                        }`}
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
+                                    {/* 이미지 + 하트 버튼 영역 */}
+                                    <div className="relative flex-shrink-0">
+                                      {p.image_url && (
+                                        <img
+                                          src={p.image_url}
+                                          alt={p.product_name || ''}
+                                          className="w-16 h-16 object-cover rounded-md"
                                         />
-                                      </svg>
-                                    </button>
-
-                                    {p.image_url && (
-                                      <img
-                                        src={p.image_url}
-                                        alt={p.product_name || ''}
-                                        className="w-16 h-16 object-cover rounded-md flex-shrink-0"
-                                      />
-                                    )}
+                                      )}
+                                      {/* 즐겨찾기 하트 버튼 - 이미지 우하단 */}
+                                      <button
+                                        onClick={() => toggleFavorite(Number(p.pid))}
+                                        className={`absolute -bottom-1 -right-1 p-1 rounded-full transition shadow-sm ${
+                                          favorites.includes(Number(p.pid))
+                                            ? 'bg-pink-500 text-white'
+                                            : 'bg-white text-pink-500 hover:bg-pink-100 border border-pink-200'
+                                        }`}
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className={`w-3.5 h-3.5 ${
+                                            favorites.includes(Number(p.pid))
+                                              ? 'fill-white'
+                                              : 'fill-none'
+                                          }`}
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"
+                                          />
+                                        </svg>
+                                      </button>
+                                    </div>
 
                                     <div className="flex-1 min-w-0">
                                       <div className="text-sm sm:text-base font-bold text-gray-800 truncate">
@@ -1424,8 +1426,8 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="border-t border-gray-200 p-3 sm:p-4 bg-white flex-shrink-0">
+            {/* Input - 모바일에서 고정 */}
+            <div className="hidden md:block border-t border-gray-200 p-3 sm:p-4 bg-white flex-shrink-0">
               <div className="flex items-end space-x-2 sm:space-x-3">
                 <input
                   type="file"
@@ -1481,6 +1483,60 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
           </motion.div>
         </div>
       </main>
+
+      {/* Mobile Fixed Input - 바텀 네비 위에 고정 */}
+      <div className="md:hidden fixed left-0 right-0 bottom-[70px] z-40 bg-white border-t border-gray-200 p-3 shadow-lg">
+        <div className="flex items-end space-x-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 rounded-xl bg-pink-100 text-pink-600 hover:bg-pink-200 transition-colors flex-shrink-0"
+            title="제품 이미지 업로드"
+          >
+            <Camera className="w-5 h-5" />
+          </button>
+          <div className="flex-1 flex items-center space-x-2">
+            <textarea
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="제품에 대해 물어보세요..."
+              className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent resize-none max-h-20"
+              rows={1}
+            />
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              className="w-8 h-8 rounded-full border border-pink-200 bg-white text-pink-500 flex items-center justify-center shadow-sm hover:bg-pink-50 transition-colors flex-shrink-0"
+              aria-label="도움말 열기"
+              title="도움말"
+            >
+              <span className="text-sm font-semibold">?</span>
+            </button>
+            <motion.button
+              onClick={handleSendMessage}
+              disabled={inputValue.trim() === ''}
+              className="p-2 rounded-xl text-white hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)' }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Send className="w-5 h-5" />
+            </motion.button>
+          </div>
+        </div>
+      </div>
 
       {/* Mobile Bottom Nav */}
       <DashboardBottomNav

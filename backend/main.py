@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import (
     profile, analysis, auth, routine, user, trends,
     favorite_products, product, ocr, stats, delete, ingredients,
-    search_ingredients, events,
+    search_ingredients, events, analytics,
 )
 # from routers import perfume  # 비활성화: perfumes 테이블 미사용
 from routers import user_ingredients as user_ingredients_router
@@ -69,6 +69,9 @@ app.include_router(chat_router, include_in_schema=False)
 
 # 이벤트 로깅 라우터
 app.include_router(events.router, prefix="/api")
+
+# 분석 대시보드 라우터
+app.include_router(analytics.router)
 
 
 @app.get("/healthz")
