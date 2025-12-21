@@ -17,12 +17,10 @@ export default function ForgotPassword({
   prefillEmail,
 }: ForgotPasswordProps) {
   const [formData, setFormData] = useState({ name: "", email: "" });
-  const [maskedPassword, setMaskedPassword] = useState<string | null>(null);
   const [step, setStep] = useState<"find" | "reset">(startStep);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [justFound, setJustFound] = useState(false); // 버튼 아래 힌트 표시용
 
   useEffect(() => {
     if (prefillEmail) {
@@ -33,7 +31,7 @@ export default function ForgotPassword({
   const handleChange = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-  // 비번 일부 확인 (버튼 아래 출력)
+  // 사용자 확인 후 비밀번호 재설정 단계로 이동
   const handleFindPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -45,13 +43,12 @@ export default function ForgotPassword({
       });
       if (!res.ok) {
         const err = await res.json();
-        alert("비밀번호를 찾을 수 없습니다. " + (err.detail || ""));
+        alert("일치하는 사용자를 찾을 수 없습니다. " + (err.detail || ""));
         setLoading(false);
         return;
       }
-      const data = await res.json();
-      setMaskedPassword(data.maskedPassword);
-      setJustFound(true); // 버튼 아래 표시 트리거
+      // 사용자 확인 성공 → 바로 비밀번호 재설정 단계로 이동
+      setStep("reset");
     } finally {
       setLoading(false);
     }
@@ -166,25 +163,14 @@ export default function ForgotPassword({
                   style={{ background: "linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)" }}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 >
-                  {loading ? "조회 중..." : "비밀번호 확인"}
+                  {loading ? "확인 중..." : "다음"}
                 </motion.button>
 
-                {/* ✅ 버튼 아래 힌트 출력 */}
-                {justFound && maskedPassword && (
-                  <div className="text-center mt-4">
-                    <p className="text-gray-700">
-                      비밀번호 : <span className="font-mono font-bold text-pink-500">{maskedPassword}</span>
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-3 mt-4">
-                      <button onClick={onNavigateLogin} className="text-gray-600 text-sm hover:text-pink-400 underline">
-                        로그인으로 가기
-                      </button>
-                      <button onClick={() => setStep("reset")} className="text-gray-600 text-sm hover:text-pink-400 underline">
-                        비밀번호 변경하기
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div className="text-center mt-4">
+                  <button onClick={onNavigateLogin} className="text-gray-600 text-sm hover:text-pink-400 underline">
+                    로그인으로 돌아가기
+                  </button>
+                </div>
               </form>
             </>
           )}
