@@ -270,6 +270,27 @@ def log_search(request: SearchEventRequest, db: Session = Depends(get_db)):
     """
     검색 이벤트 기록
     """
+    from sqlalchemy.exc import IntegrityError
+    
+    # 세션이 없으면 자동 생성
+    session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    if not session:
+        try:
+            session = UserSession(
+                session_id=request.session_id,
+                user_id=request.user_id,
+                device_type='unknown',
+                started_at=datetime.utcnow(),
+                page_view_count=0,
+                event_count=0,
+                is_bounce=1
+            )
+            db.add(session)
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    
     search = SearchQuery(
         session_id=request.session_id,
         user_id=request.user_id,
@@ -314,6 +335,27 @@ def log_product_view(request: ProductViewRequest, db: Session = Depends(get_db))
     """
     상품 상세페이지 조회 기록
     """
+    from sqlalchemy.exc import IntegrityError
+    
+    # 세션이 없으면 자동 생성
+    session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    if not session:
+        try:
+            session = UserSession(
+                session_id=request.session_id,
+                user_id=request.user_id,
+                device_type='unknown',
+                started_at=datetime.utcnow(),
+                page_view_count=0,
+                event_count=0,
+                is_bounce=1
+            )
+            db.add(session)
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    
     view = ProductViewLog(
         session_id=request.session_id,
         user_id=request.user_id,
@@ -362,6 +404,26 @@ def log_recommendation_feedback(request: RecommendationFeedbackRequest, db: Sess
     추천 상품에 대한 피드백 기록 (배치 방식)
     """
     import json
+    from sqlalchemy.exc import IntegrityError
+    
+    # 세션이 없으면 자동 생성
+    session = db.query(UserSession).filter_by(session_id=request.session_id).first()
+    if not session:
+        try:
+            session = UserSession(
+                session_id=request.session_id,
+                user_id=request.user_id,
+                device_type='unknown',
+                started_at=datetime.utcnow(),
+                page_view_count=0,
+                event_count=0,
+                is_bounce=1
+            )
+            db.add(session)
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            session = db.query(UserSession).filter_by(session_id=request.session_id).first()
     
     feedback = RecommendationFeedback(
         session_id=request.session_id,
