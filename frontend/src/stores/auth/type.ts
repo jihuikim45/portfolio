@@ -1,10 +1,17 @@
 export interface UserState {
   name: string;
   email: string;
+  isAdmin: boolean;
+}
+
+// 로그인 시 전달하는 데이터 (isAdmin은 store에서 자동 계산)
+export interface LoginPayload {
+  name: string;
+  email: string;
 }
 
 export interface UserAction {
-  login: (data: UserState) => void;
+  login: (data: LoginPayload) => void;
   logout: () => void;
 }
 

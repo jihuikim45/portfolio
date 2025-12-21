@@ -1,11 +1,12 @@
 // frontend/src/stores/auth/store.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { StoreState, UserState } from './type';
+import { StoreState, LoginPayload } from './type';
 
 export const userState = {
   name: '',
   email: '',
+  isAdmin: false,
 };
 
 export const useUserStore = create<StoreState>()(
@@ -19,14 +20,17 @@ export const useUserStore = create<StoreState>()(
       cautionIngredients: [],
 
       // 기존 액션
-      login: (data: UserState) => {
-        set({ name: data.name, email: data.email });
+      login: (data: LoginPayload) => {
+        // name이 'admin'이면 관리자
+        const isAdmin = data.name.toLowerCase() === 'admin';
+        set({ name: data.name, email: data.email, isAdmin });
       },
 
       logout: () =>
         set({
           name: '',
           email: '',
+          isAdmin: false,
           // 로그아웃 시 성분 정보도 초기화
           preferredIngredients: [],
           cautionIngredients: [],
@@ -84,6 +88,7 @@ export const useUserStore = create<StoreState>()(
         // 필요한 상태만 저장
         name: state.name,
         email: state.email,
+        isAdmin: state.isAdmin,
         preferredIngredients: state.preferredIngredients,
         cautionIngredients: state.cautionIngredients,
       }),

@@ -35,9 +35,12 @@ type PageType =
   | 'analytics'
   | 'abtest';
 
+// 관리자 전용 페이지
+const ADMIN_ONLY_PAGES: PageType[] = ['analytics', 'abtest'];
+
 function App() {
   // TODO: LocalStrorage 에도 저장해야 한다.
-  const { login, logout } = useUserStore();
+  const { login, logout, isAdmin } = useUserStore();
   const [currentPage, setCurrentPage] = useState<PageType>('login');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('Sarah');
@@ -152,20 +155,20 @@ function App() {
 
   // ✅ 페이지 이동
   const handleNavigate = (page: string) => {
-    if (
-      page === 'dashboard' ||
-      page === 'features' ||
-      page === 'chat' ||
-      page === 'profile' ||
-      page === 'settings' ||
-      page === 'diagnosis' ||
-      page === 'survey' ||
-      page === 'forgotPassword' ||
-      page === 'analytics' ||
-      page === 'abtest'
-    ) {
-      setCurrentPage(page as PageType);
+    const validPages: PageType[] = [
+      'dashboard', 'features', 'chat', 'profile', 'settings',
+      'diagnosis', 'survey', 'forgotPassword', 'analytics', 'abtest'
+    ];
+    
+    if (!validPages.includes(page as PageType)) return;
+    
+    // 관리자 전용 페이지 접근 제한
+    if (ADMIN_ONLY_PAGES.includes(page as PageType) && !isAdmin) {
+      console.warn(`[Access Denied] ${page} is admin-only page`);
+      return;
     }
+    
+    setCurrentPage(page as PageType);
   };
 
   // ✅ 회원가입, 로그인 이동

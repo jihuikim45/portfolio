@@ -30,6 +30,7 @@ export default function DashboardHeader({
   currentPage = 'dashboard',
 }: DashboardHeaderProps) {
   const name = useUserStore(state => state.name);
+  const isAdmin = useUserStore(state => state.isAdmin);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -98,34 +99,38 @@ export default function DashboardHeader({
               >
                 <UserCircle className="w-5 h-5" /> <span>프로필</span>
               </button>
-              <button
-                onClick={() => onNavigate?.('analytics')}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium"
-                style={
-                  currentPage === 'analytics'
-                    ? {
-                        background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
-                        color: 'white',
-                      }
-                    : { color: '#6b7280' }
-                }
-              >
-                <BarChart3 className="w-5 h-5" /> <span>Analytics</span>
-              </button>
-              <button
-                onClick={() => onNavigate?.('abtest')}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium"
-                style={
-                  currentPage === 'abtest'
-                    ? {
-                        background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
-                        color: 'white',
-                      }
-                    : { color: '#6b7280' }
-                }
-              >
-                <FlaskConical className="w-5 h-5" /> <span>A/B Test</span>
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => onNavigate?.('analytics')}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium"
+                  style={
+                    currentPage === 'analytics'
+                      ? {
+                          background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
+                          color: 'white',
+                        }
+                      : { color: '#6b7280' }
+                  }
+                >
+                  <BarChart3 className="w-5 h-5" /> <span>Analytics</span>
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => onNavigate?.('abtest')}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium"
+                  style={
+                    currentPage === 'abtest'
+                      ? {
+                          background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
+                          color: 'white',
+                        }
+                      : { color: '#6b7280' }
+                  }
+                >
+                  <FlaskConical className="w-5 h-5" /> <span>A/B Test</span>
+                </button>
+              )}
               <button
                 onClick={() => onNavigate?.('settings')}
                 className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-pink-50"
@@ -236,40 +241,44 @@ export default function DashboardHeader({
           >
             <UserCircle className="w-6 h-6" /> <span>프로필</span>
           </button>
-          <button
-            onClick={() => {
-              onNavigate?.('analytics');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center space-x-3 px-4 py-4 rounded-xl text-lg"
-            style={
-              currentPage === 'analytics'
-                ? {
-                    background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
-                    color: 'white',
-                  }
-                : { color: '#374151' }
-            }
-          >
-            <BarChart3 className="w-6 h-6" /> <span>Analytics</span>
-          </button>
-          <button
-            onClick={() => {
-              onNavigate?.('abtest');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center space-x-3 px-4 py-4 rounded-xl text-lg"
-            style={
-              currentPage === 'abtest'
-                ? {
-                    background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
-                    color: 'white',
-                  }
-                : { color: '#374151' }
-            }
-          >
-            <FlaskConical className="w-6 h-6" /> <span>A/B Test</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                onNavigate?.('analytics');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center space-x-3 px-4 py-4 rounded-xl text-lg"
+              style={
+                currentPage === 'analytics'
+                  ? {
+                      background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
+                      color: 'white',
+                    }
+                  : { color: '#374151' }
+              }
+            >
+              <BarChart3 className="w-6 h-6" /> <span>Analytics</span>
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => {
+                onNavigate?.('abtest');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center space-x-3 px-4 py-4 rounded-xl text-lg"
+              style={
+                currentPage === 'abtest'
+                  ? {
+                      background: 'linear-gradient(135deg, #f5c6d9 0%, #e8b4d4 100%)',
+                      color: 'white',
+                    }
+                  : { color: '#374151' }
+              }
+            >
+              <FlaskConical className="w-6 h-6" /> <span>A/B Test</span>
+            </button>
+          )}
           <button
             onClick={() => {
               onNavigate?.('settings');
