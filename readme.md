@@ -8,7 +8,7 @@
     <img src="./images/aller_logo.png" alt="Logo" width="200" height="140">
   </a>
 
-<h3 align="center">Alere — 추천이 아니라, 선택을 설계하다</h3>
+<h3 align="center">Aller — 추천이 아니라, 선택을 설계하다</h3>
 
   <p align="center">
   화장품 추천 서비스는 많지만, 사용자는 여전히 같은 질문을 반복한다.
