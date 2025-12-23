@@ -23,6 +23,42 @@ import DashboardHeader from './dashboard/DashboardHeader';
 import DashboardBottomNav from './dashboard/DashboardBottomNav';
 import DeleteAccountModal from './DeleteAccountModal';
 
+/** 재사용 가능한 토글 스위치 컴포넌트 */
+interface ToggleSwitchProps {
+  enabled: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  activeColor?: string;
+}
+
+function ToggleSwitch({ 
+  enabled, 
+  onToggle, 
+  disabled = false,
+  activeColor = 'bg-pink-500'
+}: ToggleSwitchProps) {
+  return (
+    <button
+      onClick={disabled ? undefined : onToggle}
+      disabled={disabled}
+      className={`relative w-12 h-6 rounded-full transition-colors ${
+        disabled 
+          ? 'bg-gray-200 cursor-not-allowed opacity-50' 
+          : enabled 
+            ? activeColor 
+            : 'bg-gray-300'
+      }`}
+      aria-disabled={disabled}
+    >
+      <motion.div
+        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
+        animate={{ x: enabled ? 24 : 0 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      />
+    </button>
+  );
+}
+
 export interface SettingsProps {
   userName?: string;
   onNavigate?: (page: string) => void;
@@ -97,93 +133,73 @@ export default function Settings({
                 {/* Push 알림 */}
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
-                    <Smartphone className="w-5 h-5 text-gray-500" />
+                    <Smartphone className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">푸시 알림</p>
-                      <p className="text-xs sm:text-sm text-gray-500">모바일 푸시 알림 수신</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-400">푸시 알림</p>
+                      <p className="text-xs sm:text-sm text-gray-400">모바일 푸시 알림 수신</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setPushNotifications(!pushNotifications)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${pushNotifications ? 'bg-pink-500' : 'bg-gray-300'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: pushNotifications ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={pushNotifications}
+                    onToggle={() => setPushNotifications(!pushNotifications)}
+                    disabled
+                  />
                 </div>
 
                 {/* 이메일 알림 */}
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
-                    <Mail className="w-5 h-5 text-gray-500" />
+                    <Mail className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                      <p className="text-sm sm:text-base font-semibold text-gray-400">
                         이메일 알림
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm text-gray-400">
                         중요한 업데이트를 이메일로 받기
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setEmailNotifications(!emailNotifications)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${emailNotifications ? 'bg-pink-500' : 'bg-gray-300'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: emailNotifications ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={emailNotifications}
+                    onToggle={() => setEmailNotifications(!emailNotifications)}
+                    disabled
+                  />
                 </div>
 
                 {/* 제품 업데이트 */}
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
-                    <Info className="w-5 h-5 text-gray-500" />
+                    <Info className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                      <p className="text-sm sm:text-base font-semibold text-gray-400">
                         제품 업데이트
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500">새로운 제품 추천 알림</p>
+                      <p className="text-xs sm:text-sm text-gray-400">새로운 제품 추천 알림</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setProductUpdates(!productUpdates)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${productUpdates ? 'bg-pink-500' : 'bg-gray-300'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: productUpdates ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={productUpdates}
+                    onToggle={() => setProductUpdates(!productUpdates)}
+                    disabled
+                  />
                 </div>
 
                 {/* 주간 리포트 */}
                 <div className="flex items-center justify-between py-3">
                   <div className="flex items-center space-x-3">
-                    <Bell className="w-5 h-5 text-gray-500" />
+                    <Bell className="w-5 h-5 text-gray-400" />
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">
+                      <p className="text-sm sm:text-base font-semibold text-gray-400">
                         주간 리포트
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500">매주 피부 상태 요약 받기</p>
+                      <p className="text-xs sm:text-sm text-gray-400">매주 피부 상태 요약 받기</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setWeeklyReport(!weeklyReport)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${weeklyReport ? 'bg-pink-500' : 'bg-gray-300'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: weeklyReport ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={weeklyReport}
+                    onToggle={() => setWeeklyReport(!weeklyReport)}
+                    disabled
+                  />
                 </div>
               </div>
             </div>
@@ -200,25 +216,21 @@ export default function Settings({
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
                     {darkMode ? (
-                      <Moon className="w-5 h-5 text-gray-500" />
+                      <Moon className="w-5 h-5 text-gray-400" />
                     ) : (
-                      <Sun className="w-5 h-5 text-gray-500" />
+                      <Sun className="w-5 h-5 text-gray-400" />
                     )}
                     <div>
-                      <p className="text-sm sm:text-base font-semibold text-gray-800">다크 모드</p>
-                      <p className="text-xs sm:text-sm text-gray-500">어두운 테마 사용</p>
+                      <p className="text-sm sm:text-base font-semibold text-gray-400">다크 모드</p>
+                      <p className="text-xs sm:text-sm text-gray-400">어두운 테마 사용</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setDarkMode(!darkMode)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${darkMode ? 'bg-indigo-500' : 'bg-gray-300'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: darkMode ? 24 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    enabled={darkMode}
+                    onToggle={() => setDarkMode(!darkMode)}
+                    activeColor="bg-indigo-500"
+                    disabled
+                  />
                 </div>
 
                 {/* 언어 설정 */}
