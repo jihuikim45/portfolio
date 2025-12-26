@@ -1,5 +1,8 @@
 // frontend/src/lib/api.ts
 
+import { generateUUID } from './uuid';
+import { API_BASE } from './env';
+
 // ------------------------------------------------------------------
 // 공용 타입
 // ------------------------------------------------------------------
@@ -23,14 +26,6 @@ export interface IngredientInfo {
   caution_grade: CautionGrade;
 }
 export type CautionGrade = '위험' | '주의' | '안전' | null;
-
-// ------------------------------------------------------------------
-// API BASE (절대경로; 끝 슬래시 제거)
-//  - .env 예) VITE_API_BASE=http://<EC2-PUBLIC-IP>:8000
-// ------------------------------------------------------------------
-const API_BASE =
-  ((import.meta as any).env?.VITE_API_BASE as string | undefined)?.replace(/\/+$/, '') ||
-  'http://127.0.0.1:8000';
 
 // ------------------------------------------------------------------
 // 추천 카드 + intent + cache_key 조회

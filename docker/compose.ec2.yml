@@ -1,12 +1,36 @@
 name: aller
 services:
+  elasticsearch:
+    image: ${ECR_URI_ELASTICSEARCH:-519955794856.dkr.ecr.ap-northeast-2.amazonaws.com/aller-elasticsearch}:${IMAGE_TAG:-latest}
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   backend:
     image: ${ECR_URI_BACKEND}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file:
       - ${ENV_FILE_PATH:-/opt/aller/.env}
+    environment:
+      - ES_HOST=http://elasticsearch:9200
     ports:
       - "8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 30s
@@ -23,3 +47,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  esdata:
