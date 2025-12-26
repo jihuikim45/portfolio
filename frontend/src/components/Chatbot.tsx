@@ -1,6 +1,7 @@
 // frontend/src/components/Chatbot.tsx
 'use client';
 
+import { generateUUID } from '../lib/uuid';
 import { API_BASE } from '@/lib/env';
 import * as React from 'react';
 // 맨 위 import들 사이에 추가
@@ -885,7 +886,7 @@ export default function Chatbot({ userName = 'Sarah', onNavigate }: ChatInterfac
       // ✅ 추천 노출 이벤트 로깅
       let recommendationId: string | undefined;
       if (products.length > 0) {
-        recommendationId = crypto.randomUUID();
+        recommendationId = generateUUID();
         const sessionId = getOrCreateSessionId();
         
         logRecommendationFeedback({

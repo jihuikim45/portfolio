@@ -1,5 +1,6 @@
 'use client';
 
+import { generateUUID } from '../../lib/uuid';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Heart } from 'lucide-react';
 import * as React from 'react';
@@ -356,7 +357,7 @@ export default function CustomRoutine({
 
               // ✅ 추천 결과 노출 로깅 (배치 방식)
               const sessionId = getOrCreateSessionId();
-              const recommendationId = crypto.randomUUID();  // 추천 요청 ID
+              const recommendationId = generateUUID();  // 추천 요청 ID
               setCurrentRecommendationId(recommendationId);  // ✅ 상태 저장
               setImpressionStartTime(Date.now());            // ✅ 노출 시작 시간 기록
               const shownPids = data.map((p: Product) => Number(p.product_pid));

@@ -1,4 +1,5 @@
 // frontend/src/lib/api.ts
+
 // ------------------------------------------------------------------
 // 공용 타입
 // ------------------------------------------------------------------
@@ -265,7 +266,7 @@ export function getOrCreateSessionId(): string {
   const key = 'aller_session_id';
   let sessionId = localStorage.getItem(key);
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    sessionId = generateUUID();
     localStorage.setItem(key, sessionId);
   }
   return sessionId;
