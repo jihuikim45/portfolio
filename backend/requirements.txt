@@ -25,3 +25,6 @@ gunicorn>=21.2
 pydantic[email]>=2.0.0
 python-multipart>=0.0.9
 langchain-openai>=0.1.7
+
+# Elasticsearch
+elasticsearch>=8.0.0

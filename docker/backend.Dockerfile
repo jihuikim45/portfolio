@@ -17,7 +17,7 @@ COPY ./backend/requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip && pip install -r /tmp/requirements.txt
 
 # 애플리케이션 복사
-COPY ./backend /app/backend
+COPY ./backend /app
 
 EXPOSE 8000
 
@@ -26,4 +26,4 @@ ENV GUNICORN_WORKERS=2 \
     GUNICORN_TIMEOUT=60
 
 # gunicorn + uvicorn workers
-CMD ["bash", "-lc", "exec gunicorn -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS} --timeout ${GUNICORN_TIMEOUT}"]
+CMD ["bash", "-lc", "exec gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS} --timeout ${GUNICORN_TIMEOUT}"]
